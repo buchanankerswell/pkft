@@ -1,0 +1,12 @@
+name: peak
+title: peak
+username:
+account: kerswell
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 2900246
+bundleId: 3678078
+url: https://kerswell.shinyapps.io/peak/
+when: 1601281627.28355
+asMultiple: FALSE
+asStatic: FALSE
