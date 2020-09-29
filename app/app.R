@@ -37,40 +37,7 @@ server <- function(input, output, session) {
   vals$x2 <- NULL
   vals$y2 <- NULL
   # Raw data
-  vals$data <-
-    tibble(
-      measurement = c(
-        17.118,
-        17.040,
-        17.032,
-        17.024,
-        17.020,
-        17.009,
-        16.989,
-        16.972,
-        16.969,
-        16.942,
-        16.929,
-        16.922
-      ),
-      sde = c(
-        0.155,
-        0.022,
-        0.039,
-        0.224,
-        0.015,
-        0.031,
-        0.089,
-        0.099,
-        0.041,
-        0.041,
-        0.041,
-        0.087
-      )
-    ) %>%
-    mutate(
-      toggle = rep(TRUE, length(measurement))
-    )
+  vals$data <- NULL
   # Generates interactive table populated with data from vals$data
   output$table <- renderRHandsontable({
     d <- data %>% debounce(1500)
@@ -81,10 +48,18 @@ server <- function(input, output, session) {
   data <- reactive({
     if (!is.null(input$table)) {
       vals$data <- hot_to_r(input$table)
+    } else {
+      vals$data <- read_delim('./trayler.txt', delim = ' ') %>%
+        rename(measurement = age,
+               sde = ageSds) %>%
+        select(measurement, sde) %>%
+        mutate(
+          'measurement' = as.numeric(measurement),
+          toggle = rep(TRUE, length(measurement))
+        )
     }
     return(vals$data)
   })
-  
   observe({
     req(input$sigma)
     req(input$k)
@@ -102,16 +77,21 @@ server <- function(input, output, session) {
   p1 <- reactive({
     req(!is.null(vals$data))
     d <- vals$data %>% drop_na() %>% filter(toggle == TRUE)
-    p <- p.data(
-      d,
-      type = input$type1,
-      bins = input$bins1,
-      xlim = vals$x1,
-      ylim = vals$y1,
-      sigrange = input$sigrange,
-      sigerror = input$sigma,
-      curves = input$curves1
-    )
+    if(nrow(d) != 0){
+      p <- p.data(
+        d,
+        type = input$type1,
+        bins = input$bins1,
+        xlim = vals$x1,
+        ylim = vals$y1,
+        sigrange = input$sigrange,
+        sigerror = input$sigma,
+        curves = input$curves1
+      )
+    } else {
+      p <- NULL
+    }
+    
     return(p)
   })
   p2 <- reactive({
@@ -165,7 +145,7 @@ server <- function(input, output, session) {
     t()
   })
   output$acknowledgements <- renderText({
-    paste('This app was built using the IsoplotR package:\nLudwig, K.R., 1998. On the treatment of concordant uranium-lead ages. Geochimica et Cosmochimica Acta, 62(4), pp.665-676.')
+    paste('This app was built using the IsoplotR package:\nLudwig, K.R., 1998. On the treatment of concordant uranium-lead ages. Geochimica et Cosmochimica Acta, 62(4), pp.665-676.\nInitial dataset from:\nTrayler, R.B., Schmitz, M.D., Cuitiño, J.I., Kohn, M.J., Bargo, M.S., Kay, R.F., Strömberg, C.A. and Vizcaíno, S.F., 2020. An improved approach to age-modeling in deep time: Implications for the Santa Cruz Formation, Argentina. GSA Bulletin, 132(1-2)')
   })
   observeEvent(input$type1, {
     vals$x1 <- NULL
@@ -202,8 +182,8 @@ server <- function(input, output, session) {
     if(type == 'hist') {
       output$curves1 <- renderUI({
         checkboxGroupInput('curves1', 'Choose Curves',
-                           choices = c('norm', 'sumpdf', 'kernel', 'stackpdf', 'indv'),
-                           selected = c('norm', 'indv'),
+                           choices = c('norm', 'kernel', 'sumpdf', 'stackpdf', 'indv'),
+                           selected = c('indv', 'sumpdf'),
                            inline = TRUE)
       })
       output$bins1 <- renderUI({
@@ -237,12 +217,12 @@ server <- function(input, output, session) {
       })
       output$curves2 <- renderUI({
         checkboxGroupInput('curves2', 'Choose Curves',
-                           choices = c('norm', 'sumpdf', 'kernel'), selected = c('norm', 'sumpdf'), inline = TRUE)
+                           choices = c('norm', 'sumpdf', 'kernel'), selected = c('sumpdf'), inline = TRUE)
       })
     } else {
       output$curves2 <- renderUI({
         checkboxGroupInput('curves2', 'Choose Curves',
-                           choices = c('norm', 'sumpdf', 'kernel'), selected = c('norm', 'sumpdf'), inline = TRUE)
+                           choices = c('norm', 'sumpdf', 'kernel'), selected = c('sumpdf'), inline = TRUE)
       })
       output$bins2 <- NULL
     }

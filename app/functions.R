@@ -15,7 +15,7 @@ body <-
                 br(),
                 'Right-click to add and delete rows',
                 solidHeader = TRUE,
-                rHandsontableOutput(outputId = 'table'),
+                rHandsontableOutput(outputId = 'table', height = "400px"),
                 selectInput(
                   'type1',
                   label = 'Plot Type',
@@ -420,12 +420,6 @@ p.data <-
         p <- p + geom_density(data = d, aes(x = measurement, y = ..density..), color = 'black', fill = 'thistle4', alpha = 0.1)
       }
     } else if (type == 'point') {
-      if (is.null(ylim)) {
-        ylim <- c(
-          mean(d$measurement) - max(d$sde) * sigrange,
-          mean(d$measurement) + max(d$sde) * sigrange
-        )
-      }
       p <- d %>%
         ggplot() +
         geom_point(
@@ -456,9 +450,10 @@ p.data <-
         ) +
         coord_cartesian(xlim = xlim,
                         ylim = ylim) +
+        scale_x_continuous(breaks = seq_along(d$measurement)) +
         theme_grey(base_size = 14) +
-        theme(axis.text.x = element_blank(),
-              axis.ticks.x = element_blank())
+        theme(panel.grid.minor.x = element_blank(),
+              panel.grid.major.x = element_blank())
     }
     return(p)
   }
