@@ -19,18 +19,11 @@ body <-
                 selectInput(
                   'type1',
                   label = 'Plot Type',
-                  choices = c('point', 'peaks', 'hist', 'histpeaks'),
-                  #, 'histsum', 'histsumstack'),
+                  choices = c('point', 'hist'),
                   selected = 'point'
                 ),
-                sliderInput(
-                  'bins',
-                  'Bins',
-                  min = 1,
-                  max = 50,
-                  value = 10,
-                  ticks = FALSE
-                )
+                uiOutput('bins1'),
+                uiOutput('curves1')
               ),
               # Second column on first row of layout (Plot)
               box(
@@ -81,14 +74,8 @@ body <-
                   choices = c('hist', 'peaks'),
                   selected = 'hist'
                 ),
-                sliderInput(
-                  'bins2',
-                  'Bins',
-                  min = 1,
-                  max = 50,
-                  value = 10,
-                  ticks = FALSE
-                )
+                uiOutput('bins2'),
+                uiOutput('curves2')
               ),
               # Second column on first row of layout (Plot)
               box(
@@ -150,7 +137,7 @@ body <-
                 ),
                 numericInput(
                   'sigma',
-                  'Measurement Errors (#sigma)',
+                  'Measurement Errors (# of sigma)',
                   min = 1,
                   max = 3,
                   step = 1,
@@ -245,6 +232,7 @@ pkfit <-
     if (is(peaks, "try-error")) {
       pks <- NULL
     } else {
+      loglik <- peaks$L
       legend <- peaks$legend %>%
         as_tibble(rownames = 'peak') %>%
         rename(legend = value) %>%
@@ -265,6 +253,7 @@ pkfit <-
         rename(est = data) %>%
         left_join(legend) %>%
         left_join(props) %>%
+        add_column(loglik = loglik, .after = 'legend') %>%
         mutate(d.norm = est %>% purrr::map(
           ~ .x %>%
             pivot_wider(names_from = stat, values_from = val) %>%
@@ -299,7 +288,8 @@ p.data <-
                     'peaks',
                     'histpeaks',
                     'histsum',
-                    'histsumstack')) {
+                    'histsumstack'),
+           curves = c('norm', 'sumpdf')) {
     d <- data %>%
       drop_na() %>%
       mutate(
@@ -318,25 +308,25 @@ p.data <-
                 mean(.x, na.rm = TRUE) + sigrange * .y,
                 .y / 10
               ),
-              mean = mean(.x, na.rm = TRUE),
+              mean = .x,
               sd = .y
             ) / length(data$measurement)
           )
         ),
-        d.sum = purrr::map(data$sde, ~ tibble(
+        d.sum = purrr::map2(data$measurement, data$sde, ~ tibble(
           x = seq(
             min(data$measurement, na.rm = TRUE) - sigrange * mean(data$sde, na.rm = TRUE),
             max(data$measurement, na.rm = TRUE) + sigrange * mean(data$sde, na.rm = TRUE),
-            mean(data$sde, na.rm = TRUE) / 10
+            mean(data$sde, na.rm = TRUE) / 15
           ),
           d = dnorm(
             seq(
               min(data$measurement, na.rm = TRUE) - sigrange * mean(data$sde, na.rm = TRUE),
               max(data$measurement, na.rm = TRUE) + sigrange * mean(data$sde, na.rm = TRUE),
-              mean(data$sde, na.rm = TRUE) / 10
+              mean(data$sde, na.rm = TRUE) / 15
             ),
-            mean = mean(data$measurement, na.rm = TRUE),
-            sd = .x
+            mean = .x,
+            sd = .y
           ) / length(data$measurement)
         ))
       )
@@ -356,6 +346,13 @@ p.data <-
         sd = sd(d$measurement, na.rm = TRUE)
       )
     )
+    d.s <- d$d.sum %>%
+      bind_rows(.id = 'm') %>%
+      group_by(x) %>%
+      summarise(sumd = sum(d, na.rm = TRUE))
+    d.pks <- d$d.norm %>%
+      bind_rows(.id = 'm') %>%
+      group_by(m)
     if (type == 'hist') {
       p <- d %>%
         ggplot() +
@@ -366,12 +363,62 @@ p.data <-
           alpha = 0.25
         ) +
         geom_rug(aes(x = measurement)) +
-        geom_area(data = d.n, aes(x = x, y = d), fill = 'black', color = 'black', alpha = 0.1, position = 'identity') +
         coord_cartesian(xlim = xlim, ylim = ylim) +
         xlab('Measured Value') +
         ylab('Density') +
-        ggtitle('Histogram with normal PDF') +
-        theme_grey(base_size = 16)
+        ggtitle('Histogram with density functions') +
+        scale_color_gradient(
+          name = 'Measurement',
+          low = 'black',
+          high = 'palegreen2',
+          guide = 'legend'
+        ) +
+        scale_fill_gradient(
+          name = 'Measurement',
+          low = 'black',
+          high = 'palegreen2',
+          guide = 'legend'
+        ) +
+        theme_grey(base_size = 14)
+      if('indv' %in% curves) {
+        p <- p + geom_area(
+          data = d.pks,
+          aes(
+            x = x,
+            y = d,
+            fill = as.numeric(m),
+            group = m
+          ),
+          color = 'black',
+          alpha = 0.5,
+          position = 'identity',
+          show.legend = FALSE
+        )
+      }
+      if('norm' %in% curves) {
+        p <- p + geom_area(data = d.n, aes(x = x, y = d), fill = 'black', color = 'black', alpha = 0.1, position = 'identity')
+      }
+      if('sumpdf' %in% curves) {
+        p <- p + geom_area(data = d.s, aes(x = x, y = sumd), fill = 'thistle4', color = 'black', alpha = 0.1, position = 'identity')
+      }
+      if('stackpdf' %in% curves) {
+        p <- p + geom_area(
+          data = d$d.sum %>% bind_rows(.id = 'm') %>% group_by(m),
+          aes(
+            x = x,
+            y = d,
+            fill = as.numeric(m),
+            group = m
+          ),
+          color = 'black',
+          alpha = 0.5,
+          position = 'stack',
+          show.legend = FALSE
+        )
+      }
+      if('kernel' %in% curves) {
+        p <- p + geom_density(data = d, aes(x = measurement, y = ..density..), color = 'black', fill = 'thistle4', alpha = 0.1)
+      }
     } else if (type == 'point') {
       if (is.null(ylim)) {
         ylim <- c(
@@ -409,135 +456,9 @@ p.data <-
         ) +
         coord_cartesian(xlim = xlim,
                         ylim = ylim) +
-        theme_grey(base_size = 16) +
+        theme_grey(base_size = 14) +
         theme(axis.text.x = element_blank(),
               axis.ticks.x = element_blank())
-    } else if (type == 'peaks') {
-      p <- d$d.norm %>%
-        bind_rows(.id = 'm') %>%
-        group_by(m) %>%
-        ggplot() +
-        geom_area(
-          aes(
-            x = x,
-            y = d,
-            fill = as.numeric(m),
-            group = m
-          ),
-          color = 'black',
-          alpha = 0.5,
-          position = 'identity',
-          show.legend = FALSE
-        ) +
-        geom_rug(data = d, aes(x = measurement)) +
-        xlab('Measured Value') +
-        ylab('Density') +
-        ggtitle('Individual Gaussians') +
-        coord_cartesian(xlim = xlim, ylim = ylim) +
-        scale_fill_gradient(
-          name = 'Measurement',
-          low = 'black',
-          high = 'palegreen2',
-          guide = 'legend'
-        ) +
-        theme_grey(base_size = 16)
-    } else  if (type == 'histpeaks') {
-      p <- d$d.norm %>%
-        bind_rows(.id = 'm') %>%
-        group_by(m) %>%
-        ggplot() +
-        geom_histogram(
-          data = d,
-          aes(x = measurement, y = ..density..),
-          bins = bins,
-          color = 'white',
-          alpha = 0.25
-        ) +
-        geom_area(data = d.n, aes(x = x, y = d), fill = 'black', color = 'black', alpha = 0.1, position = 'identity') +
-        geom_rug(data = d, aes(x = measurement)) +
-        geom_area(
-          aes(
-            x = x,
-            y = d,
-            fill = as.numeric(m),
-            group = m
-          ),
-          color = 'black',
-          alpha = 0.5,
-          position = 'identity',
-          show.legend = FALSE
-        ) +
-        coord_cartesian(xlim = xlim, ylim = ylim) +
-        xlab('Measured Value') +
-        ylab('Density') +
-        ggtitle('Histogram with individual Gaussians') +
-        scale_fill_gradient(
-          name = 'Measurement',
-          low = 'black',
-          high = 'palegreen2',
-          guide = 'legend'
-        ) +
-        theme_grey(base_size = 16)
-    } else if (type == 'histsum') {
-      p <- d$d.sum %>%
-        bind_rows(.id = 'm') %>%
-        group_by(x) %>%
-        summarise(sumd = sum(d, na.rm = TRUE)) %>%
-        ggplot() +
-        geom_histogram(
-          data = d,
-          aes(x = measurement, y = ..density..),
-          bins = bins,
-          color = 'white',
-          alpha = 0.25
-        ) +
-        geom_rug(data = d, aes(x = measurement)) +
-        geom_line(
-          data = d$d.sum %>% bind_rows(.id = 'm') %>% group_by(m),
-          aes(
-            x = x,
-            y = d,
-            color = as.numeric(m),
-            group = m
-          ),
-          position = 'identity',
-          show.legend = FALSE
-        ) +
-        geom_line(aes(x = x, y = sumd)) +
-        coord_cartesian(xlim = xlim, ylim = ylim) +
-        xlab('Measured Value') +
-        ylab('Density') +
-        theme_grey(base_size = 16)
-    } else if (type == 'histsumstack') {
-      p <- d$d.sum %>%
-        bind_rows(.id = 'm') %>%
-        group_by(x) %>%
-        summarise(sumd = sum(d, na.rm = TRUE)) %>%
-        ggplot() +
-        geom_histogram(
-          data = d,
-          aes(x = measurement, y = ..density..),
-          bins = bins,
-          color = 'white',
-          alpha = 0.25
-        ) +
-        geom_rug(data = d, aes(x = measurement)) +
-        geom_line(
-          data = d$d.sum %>% bind_rows(.id = 'm') %>% group_by(m),
-          aes(
-            x = x,
-            y = d,
-            color = as.numeric(m),
-            group = m
-          ),
-          position = 'stack',
-          show.legend = FALSE
-        ) +
-        geom_line(aes(x = x, y = sumd)) +
-        coord_cartesian(xlim = xlim, ylim = ylim) +
-        xlab('Measured Value') +
-        ylab('Density') +
-        theme_grey(base_size = 16)
     }
     return(p)
   }
@@ -547,7 +468,8 @@ p.pks <-
            sigrange = 3,
            xlim = NULL,
            ylim = NULL,
-           type = c('hist', 'peaks')) {
+           type = c('hist', 'peaks'),
+           curves = c('norm', 'sumpdf', 'kernel')) {
     d <- pks$data %>%
       drop_na() %>%
       mutate(
@@ -566,25 +488,25 @@ p.pks <-
                 mean(.x, na.rm = TRUE) + sigrange * .y,
                 .y / 10
               ),
-              mean = mean(.x, na.rm = TRUE),
+              mean = .x,
               sd = .y
             ) / length(pks$data$measurement)
           )
         ),
-        d.sum = purrr::map(pks$data$sde, ~ tibble(
+        d.sum = purrr::map2(pks$data$measurement, pks$data$sde, ~ tibble(
           x = seq(
             min(pks$data$measurement, na.rm = TRUE) - sigrange * mean(pks$data$sde, na.rm = TRUE),
             max(pks$data$measurement, na.rm = TRUE) + sigrange * mean(pks$data$sde, na.rm = TRUE),
-            mean(pks$data$sde, na.rm = TRUE) / 10
+            mean(pks$data$sde, na.rm = TRUE) / 15
           ),
           d = dnorm(
             seq(
               min(pks$data$measurement, na.rm = TRUE) - sigrange * mean(pks$data$sde, na.rm = TRUE),
               max(pks$data$measurement, na.rm = TRUE) + sigrange * mean(pks$data$sde, na.rm = TRUE),
-              mean(pks$data$sde, na.rm = TRUE) / 10
+              mean(pks$data$sde, na.rm = TRUE) / 15
             ),
-            mean = mean(pks$data$measurement, na.rm = TRUE),
-            sd = .x
+            mean = .x,
+            sd = .y
           ) / length(pks$data$measurement)
         ))
       )
@@ -604,6 +526,10 @@ p.pks <-
         sd = sd(d$measurement, na.rm = TRUE)
       )
     )
+    d.s <- d$d.sum %>%
+      bind_rows(.id = 'm') %>%
+      group_by(x) %>%
+      summarise(sumd = sum(d, na.rm = TRUE))
     d.pks <- pks$pks$d.norm %>%
       bind_rows(.id = 'pk') %>%
       group_by(pk)
@@ -617,7 +543,6 @@ p.pks <-
           alpha = 0.25
         ) +
         geom_rug(aes(x = measurement)) +
-        geom_line(data = d.n, aes(x = x, y = d), alpha = 0.5) +
         geom_area(
           data = d.pks,
           aes(
@@ -641,11 +566,19 @@ p.pks <-
           guide = 'legend',
           breaks = seq_along(d$measurement)
         ) +
-        theme_grey(base_size = 16)
+        theme_grey(base_size = 14)
+      if('kernel' %in% curves) {
+        p <- p + geom_density(data = d, aes(x = measurement, y = ..density..), color = 'black', fill = 'thistle4', alpha = 0.1)
+      }
+      if('sumpdf' %in% curves) {
+        p <- p + geom_area(data = d.s, aes(x = x, y = sumd), fill = 'thistle4', color = 'black', alpha = 0.1, position = 'identity')
+      }
+      if('norm' %in% curves) {
+        p <- p + geom_area(data = d.n, aes(x = x, y = d), fill = 'black', color = 'black', alpha = 0.1, position = 'identity')
+      }
     } else if (type == 'peaks') {
       p <- d.pks %>%
         ggplot() +
-        geom_line(data = d.n, aes(x = x, y = d), alpha = 0.5) +
         geom_area(
           aes(
             x = x,
@@ -668,7 +601,16 @@ p.pks <-
           guide = 'legend',
           breaks = seq_along(d$measurement)
         ) +
-        theme_grey(base_size = 16)
+        theme_grey(base_size = 14)
+      if('kernel' %in% curves) {
+        p <- p + geom_density(data = d, aes(x = measurement, y = ..density..), color = 'black', fill = 'thistle4', alpha = 0.1)
+      }
+      if('sumpdf' %in% curves) {
+        p <- p + geom_area(data = d.s, aes(x = x, y = sumd), fill = 'thistle4', color = 'black', alpha = 0.1, position = 'identity')
+      }
+      if('norm' %in% curves) {
+        p <- p + geom_area(data = d.n, aes(x = x, y = d), fill = 'black', color = 'black', alpha = 0.1, position = 'identity')
+      }
     }
     return(p)
   }

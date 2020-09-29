@@ -99,17 +99,18 @@ server <- function(input, output, session) {
     p1 <<- p.data(
       d,
       type = input$type1,
-      bins = input$bins,
+      bins = input$bins1,
       xlim = vals$x1,
       ylim = vals$y1,
       sigrange = input$sigrange,
-      sigerror = input$sigma
+      sigerror = input$sigma,
+      curves = input$curves1
     )
     p1
   })
   output$p2 <- renderPlot({
     req(!is.na(vals$pks))
-    req(input$bins)
+    req(input$bins2)
     req(input$sigrange)
     req(input$type2)
     p2 <<- try(
@@ -119,7 +120,8 @@ server <- function(input, output, session) {
         sigrange = input$sigrange,
         xlim = vals$x2,
         ylim = vals$y2,
-        type = input$type2
+        type = input$type2,
+        curves = input$curves2
       )
     )
     if (is(p.pks, "try-error")) {
@@ -130,11 +132,19 @@ server <- function(input, output, session) {
   })
   output$info <- renderText({
     req(vals$pks)
-    paste0(
+    info <- try(paste0(
       ' Peak   |  Pos. | StdE  |  Proportion',
       '\n ',
-      paste(vals$pks$pks$legend, collapse = '\n ')
-    )
+      paste(vals$pks$pks$legend, collapse = '\n '),
+      '\n ',
+      'Log-likelihood: ',
+      round(vals$pks$pks$loglik[[1]], 4)
+    ))
+    if (is(info, "try-error")) {
+      info <- 'Algorithm went singular. Please select another value for k'
+    } else {
+      info <- info
+    }
   })
   output$acknowledgements <- renderText({
     paste('This app was built using the IsoplotR package:\nLudwig, K.R., 1998. On the treatment of concordant uranium-lead ages. Geochimica et Cosmochimica Acta, 62(4), pp.665-676.')
@@ -169,6 +179,57 @@ server <- function(input, output, session) {
       vals$y2 <- NULL
     }
   })
+  observeEvent(input$type1, {
+    type <- input$type1
+    if(type == 'hist') {
+      output$curves1 <- renderUI({
+        checkboxGroupInput('curves1', 'Choose Curves',
+                           choices = c('norm', 'sumpdf', 'kernel', 'stackpdf', 'indv'),
+                           selected = c('norm', 'indv'),
+                           inline = TRUE)
+      })
+      output$bins1 <- renderUI({
+        sliderInput(
+          'bins1',
+          'Bins',
+          min = 1,
+          max = 50,
+          value = 10,
+          ticks = FALSE
+        )
+      })
+      } else {
+        output$curves1 <- NULL
+        output$bins1 <- NULL
+    }
+  }, ignoreInit = TRUE)
+  
+  observeEvent(input$type2, {
+    type <- input$type2
+    if(type == 'hist') {
+      output$bins2 <- renderUI({
+        sliderInput(
+          'bins2',
+          'Bins',
+          min = 1,
+          max = 50,
+          value = 10,
+          ticks = FALSE
+        )
+      })
+      output$curves2 <- renderUI({
+        checkboxGroupInput('curves2', 'Choose Curves',
+                           choices = c('norm', 'sumpdf', 'kernel'), selected = c('norm', 'sumpdf'), inline = TRUE)
+      })
+    } else {
+      output$curves2 <- renderUI({
+        checkboxGroupInput('curves2', 'Choose Curves',
+                           choices = c('norm', 'sumpdf', 'kernel'), selected = c('norm', 'sumpdf'), inline = TRUE)
+      })
+      output$bins2 <- NULL
+    }
+  })
+  
   # This observer handles the plot download
   observe({
     # Needs a filename input by the user
