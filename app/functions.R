@@ -22,6 +22,7 @@ body <-
                   choices = c('point', 'hist'),
                   selected = 'point'
                 ),
+                uiOutput('stp'),
                 uiOutput('bins1'),
                 uiOutput('curves1')
               ),
@@ -278,6 +279,7 @@ pkfit <-
   }
 p.data <-
   function(data,
+           pks = NULL,
            bins = 10,
            sigrange = 3,
            sigerror = 1,
@@ -442,18 +444,41 @@ p.data <-
         ))) +
         xlab('') +
         ylab('Measured Value') +
-        scale_color_gradient(
-          name = 'Measurement',
+        scale_fill_gradient(
+          name = 'Peak',
           low = 'black',
           high = 'palegreen2',
           guide = 'legend'
         ) +
+        guides(fill = guide_legend(override.aes = list(alpha = 1))) +
         coord_cartesian(xlim = xlim,
                         ylim = ylim) +
         scale_x_continuous(breaks = seq_along(d$measurement)) +
         theme_grey(base_size = 14) +
         theme(panel.grid.minor.x = element_blank(),
               panel.grid.major.x = element_blank())
+      if(!is.null(pks)) {
+        stp <- pks$est %>% 
+          bind_rows(.id = 'pk') %>%
+          group_by(pk) %>%
+          pivot_wider(names_from = stat, values_from = val) %>%
+          select(t, `s[t]`) %>%
+          nest()
+        p.stp <- stp$data %>%
+          bind_rows(.id = 'pk') %>%
+          mutate('pk' = as.numeric(pk)) %>%
+          purrr::pmap( ~ geom_rect(
+            aes(
+              ymin = ..2 - ..3 * sigrange,
+              ymax = ..2 + ..3 * sigrange,
+              xmin = 1,
+              xmax = length(d$measurement),
+              fill = ..1
+            ),
+            alpha = 0.005
+          ))
+        p <- p + p.stp
+      }
     }
     return(p)
   }
@@ -561,6 +586,7 @@ p.pks <-
           guide = 'legend',
           breaks = seq_along(d$measurement)
         ) +
+        guides(fill = guide_legend(override.aes = list(alpha = 1))) +
         theme_grey(base_size = 14)
       if('kernel' %in% curves) {
         p <- p + geom_density(data = d, aes(x = measurement, y = ..density..), color = 'black', fill = 'thistle4', alpha = 0.1)
@@ -596,6 +622,7 @@ p.pks <-
           guide = 'legend',
           breaks = seq_along(d$measurement)
         ) +
+        guides(fill = guide_legend(override.aes = list(alpha = 1))) +
         theme_grey(base_size = 14)
       if('kernel' %in% curves) {
         p <- p + geom_density(data = d, aes(x = measurement, y = ..density..), color = 'black', fill = 'thistle4', alpha = 0.1)

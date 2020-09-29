@@ -31,7 +31,7 @@ server <- function(input, output, session) {
   # Initialize reactive values (reactive values store values that need to change)
   vals <- reactiveValues()
   # Locations of peak positions (output from isoplotR function 'peakfit')
-  vals$pks <- NA
+  vals$pks <- NULL
   vals$x1 <- NULL
   vals$y1 <- NULL
   vals$x2 <- NULL
@@ -49,7 +49,7 @@ server <- function(input, output, session) {
     if (!is.null(input$table)) {
       vals$data <- hot_to_r(input$table)
     } else {
-      vals$data <- read_delim('./trayler.txt', delim = ' ') %>%
+      vals$data <- read_delim('data/trayler.txt', delim = ' ') %>%
         rename(measurement = age,
                sde = ageSds) %>%
         select(measurement, sde) %>%
@@ -77,21 +77,47 @@ server <- function(input, output, session) {
   p1 <- reactive({
     req(!is.null(vals$data))
     d <- vals$data %>% drop_na() %>% filter(toggle == TRUE)
-    if(nrow(d) != 0){
-      p <- p.data(
-        d,
-        type = input$type1,
-        bins = input$bins1,
-        xlim = vals$x1,
-        ylim = vals$y1,
-        sigrange = input$sigrange,
-        sigerror = input$sigma,
-        curves = input$curves1
-      )
+    if (nrow(d) != 0) {
+      if (!is.null(vals$pks)) {
+        if (isTruthy(input$stp)) {
+          p <- p.data(
+            d,
+            vals$pks$pks,
+            type = input$type1,
+            bins = input$bins1,
+            xlim = vals$x1,
+            ylim = vals$y1,
+            sigrange = input$sigrange,
+            sigerror = input$sigma,
+            curves = input$curves1
+          )
+        } else {
+          p <- p.data(
+            d,
+            type = input$type1,
+            bins = input$bins1,
+            xlim = vals$x1,
+            ylim = vals$y1,
+            sigrange = input$sigrange,
+            sigerror = input$sigma,
+            curves = input$curves1
+          )
+        }
+      } else {
+        p <- p.data(
+          d,
+          type = input$type1,
+          bins = input$bins1,
+          xlim = vals$x1,
+          ylim = vals$y1,
+          sigrange = input$sigrange,
+          sigerror = input$sigma,
+          curves = input$curves1
+        )
+      }
     } else {
       p <- NULL
     }
-    
     return(p)
   })
   p2 <- reactive({
@@ -177,13 +203,12 @@ server <- function(input, output, session) {
       vals$y2 <- NULL
     }
   })
-  observeEvent(input$type1, {
+  observe({
     type <- input$type1
     if(type == 'hist') {
       output$curves1 <- renderUI({
         checkboxGroupInput('curves1', 'Choose Curves',
                            choices = c('norm', 'kernel', 'sumpdf', 'stackpdf', 'indv'),
-                           selected = c('indv', 'sumpdf'),
                            inline = TRUE)
       })
       output$bins1 <- renderUI({
@@ -196,11 +221,15 @@ server <- function(input, output, session) {
           ticks = FALSE
         )
       })
+      output$stp <- NULL
       } else {
         output$curves1 <- NULL
         output$bins1 <- NULL
+        output$stp <- renderUI({
+          checkboxInput('stp', 'Peaks', value = FALSE)
+        })
     }
-  }, ignoreInit = TRUE)
+  })
   
   observeEvent(input$type2, {
     type <- input$type2
@@ -217,12 +246,12 @@ server <- function(input, output, session) {
       })
       output$curves2 <- renderUI({
         checkboxGroupInput('curves2', 'Choose Curves',
-                           choices = c('norm', 'sumpdf', 'kernel'), selected = c('sumpdf'), inline = TRUE)
+                           choices = c('norm', 'sumpdf', 'kernel'), inline = TRUE)
       })
     } else {
       output$curves2 <- renderUI({
         checkboxGroupInput('curves2', 'Choose Curves',
-                           choices = c('norm', 'sumpdf', 'kernel'), selected = c('sumpdf'), inline = TRUE)
+                           choices = c('norm', 'sumpdf', 'kernel'), inline = TRUE)
       })
       output$bins2 <- NULL
     }
