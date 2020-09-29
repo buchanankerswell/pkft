@@ -73,15 +73,22 @@ server <- function(input, output, session) {
     )
   # Generates interactive table populated with data from vals$data
   output$table <- renderRHandsontable({
-    rhandsontable(vals$data, stretchH = 'all') %>%
+    d <- data %>% debounce(1500)
+    rhandsontable(d(), stretchH = 'all') %>%
       hot_cols(columnSorting = TRUE)
   })
+  
+  data <- reactive({
+    if (!is.null(input$table)) {
+      vals$data <- hot_to_r(input$table)
+    }
+    return(vals$data)
+  })
+  
   observe({
     req(input$sigma)
     req(input$k)
-    if (!is.null(input$table)) {
-      vals$data <- hot_to_r(input$table)
-      d <- vals$data %>% drop_na() %>% filter(toggle == TRUE)
+      d <- data() %>% drop_na() %>% filter(toggle == TRUE)
       vals$pks <- pkfit(
         d,
         k = input$k,
@@ -91,12 +98,11 @@ server <- function(input, output, session) {
         log = input$log,
         alpha = input$alpha
       )
-    }
   })
-  output$p1 <- renderPlot({
+  p1 <- reactive({
     req(!is.null(vals$data))
     d <- vals$data %>% drop_na() %>% filter(toggle == TRUE)
-    p1 <<- p.data(
+    p <- p.data(
       d,
       type = input$type1,
       bins = input$bins1,
@@ -106,14 +112,14 @@ server <- function(input, output, session) {
       sigerror = input$sigma,
       curves = input$curves1
     )
-    p1
+    return(p)
   })
-  output$p2 <- renderPlot({
+  p2 <- reactive({
     req(!is.na(vals$pks))
     req(input$bins2)
     req(input$sigrange)
     req(input$type2)
-    p2 <<- try(
+    p <- try(
       p.pks(
         vals$pks,
         bins = input$bins2,
@@ -125,26 +131,38 @@ server <- function(input, output, session) {
       )
     )
     if (is(p.pks, "try-error")) {
-     p2 <<- NULL
-    } else {
-      p2
+      p <- NULL
     }
+    return(p)
   })
-  output$info <- renderText({
+  output$p1 <- renderPlot({
+    p <- p1 %>% debounce(200)
+    p()
+  })
+  output$p2 <- renderPlot({
+    p <- p2 %>% debounce(0)
+    p()
+  })
+  vtext <- eventReactive(p2(), {
     req(vals$pks)
     info <- try(paste0(
       ' Peak   |  Pos. | StdE  |  Proportion',
       '\n ',
       paste(vals$pks$pks$legend, collapse = '\n '),
       '\n ',
-      'Log-likelihood: ',
-      round(vals$pks$pks$loglik[[1]], 4)
+      'Bayesian Information Criterion: ',
+      round(vals$pks$pks$BIC[[1]], 2)
     ))
     if (is(info, "try-error")) {
       info <- 'Algorithm went singular. Please select another value for k'
     } else {
       info <- info
     }
+    return(info)
+  })
+  output$info <- renderText({
+    t <- vtext %>% debounce(0)
+    t()
   })
   output$acknowledgements <- renderText({
     paste('This app was built using the IsoplotR package:\nLudwig, K.R., 1998. On the treatment of concordant uranium-lead ages. Geochimica et Cosmochimica Acta, 62(4), pp.665-676.')
@@ -242,9 +260,9 @@ server <- function(input, output, session) {
                       content <-
                         function(filename) {
                           if(input$p.select == 'Explore Data') {
-                            p <- p1
+                            p <- p1()
                           } else {
-                            p <- p2
+                            p <- p2()
                           }
                           ggsave(
                             filename,

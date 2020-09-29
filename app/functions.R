@@ -232,7 +232,7 @@ pkfit <-
     if (is(peaks, "try-error")) {
       pks <- NULL
     } else {
-      loglik <- peaks$L
+      BIC <- (ncol(peaks$peaks)*log(nrow(d)))-(2*peaks$L)
       legend <- peaks$legend %>%
         as_tibble(rownames = 'peak') %>%
         rename(legend = value) %>%
@@ -253,7 +253,7 @@ pkfit <-
         rename(est = data) %>%
         left_join(legend) %>%
         left_join(props) %>%
-        add_column(loglik = loglik, .after = 'legend') %>%
+        add_column(BIC = BIC, .after = 'legend') %>%
         mutate(d.norm = est %>% purrr::map(
           ~ .x %>%
             pivot_wider(names_from = stat, values_from = val) %>%
