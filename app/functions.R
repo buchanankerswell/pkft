@@ -22,9 +22,9 @@ body <-
                   choices = c('point', 'hist'),
                   selected = 'point'
                 ),
-                uiOutput('stp'),
                 uiOutput('bins1'),
-                uiOutput('curves1')
+                uiOutput('curves1'),
+                checkboxInput('toggle', 'Toggle All', value = FALSE)
               ),
               # Second column on first row of layout (Plot)
               box(
@@ -76,7 +76,8 @@ body <-
                   selected = 'hist'
                 ),
                 uiOutput('bins2'),
-                uiOutput('curves2')
+                uiOutput('curves2'),
+                actionButton('calc', 'Find Peaks')
               ),
               # Second column on first row of layout (Plot)
               box(
@@ -138,7 +139,7 @@ body <-
                 ),
                 numericInput(
                   'sigma',
-                  'Measurement Errors (# of sigma)',
+                  'meas Errors (# of sigma)',
                   min = 1,
                   max = 3,
                   step = 1,
@@ -218,7 +219,7 @@ pkfit <-
     d <- d %>%
       filter(toggle == TRUE) %>%
       select(-toggle) %>%
-      mutate('sde' = sde / sigerror)
+      mutate('sig' = sig / sigerror)
     # Find peaks
     peaks <-
       # Try peakfit function with the current arguments
@@ -292,12 +293,13 @@ p.data <-
                     'histsum',
                     'histsumstack'),
            curves = c('norm', 'sumpdf')) {
+    if(nrow(data) == 0){stop('No data')}
     d <- data %>%
       drop_na() %>%
       mutate(
         d.norm = purrr::map2(
-          data$measurement,
-          data$sde,
+          data$meas,
+          data$sig,
           ~ tibble(
             x = seq(
               mean(.x, na.rm = TRUE) - sigrange * .y,
@@ -312,42 +314,46 @@ p.data <-
               ),
               mean = .x,
               sd = .y
-            ) / length(data$measurement)
+            ) / length(data$meas)
           )
         ),
-        d.sum = purrr::map2(data$measurement, data$sde, ~ tibble(
+        d.sum = purrr::map2(data$meas, data$sig, ~ tibble(
           x = seq(
-            min(data$measurement, na.rm = TRUE) - sigrange * mean(data$sde, na.rm = TRUE),
-            max(data$measurement, na.rm = TRUE) + sigrange * mean(data$sde, na.rm = TRUE),
-            mean(data$sde, na.rm = TRUE) / 15
+            min(data$meas, na.rm = TRUE) - sigrange * mean(data$sig, na.rm = TRUE),
+            max(data$meas, na.rm = TRUE) + sigrange * mean(data$sig, na.rm = TRUE),
+            mean(data$sig, na.rm = TRUE) / 15
           ),
           d = dnorm(
             seq(
-              min(data$measurement, na.rm = TRUE) - sigrange * mean(data$sde, na.rm = TRUE),
-              max(data$measurement, na.rm = TRUE) + sigrange * mean(data$sde, na.rm = TRUE),
-              mean(data$sde, na.rm = TRUE) / 15
+              min(data$meas, na.rm = TRUE) - sigrange * mean(data$sig, na.rm = TRUE),
+              max(data$meas, na.rm = TRUE) + sigrange * mean(data$sig, na.rm = TRUE),
+              mean(data$sig, na.rm = TRUE) / 15
             ),
             mean = .x,
             sd = .y
-          ) / length(data$measurement)
+          ) / length(data$meas)
         ))
       )
-    d.n <- tibble(
-      x = seq(
-        min(d$measurement, na.rm = TRUE) - sigrange * mean(d$sde, na.rm = TRUE),
-        max(d$measurement, na.rm = TRUE) + sigrange * mean(d$sde, na.rm = TRUE),
-        sd(d$measurement, na.rm = TRUE) / 10
-      ),
-      d = dnorm(
-        seq(
-          min(d$measurement, na.rm = TRUE) - sigrange * mean(d$sde, na.rm = TRUE),
-          max(d$measurement, na.rm = TRUE) + sigrange * mean(d$sde, na.rm = TRUE),
-          sd(d$measurement, na.rm = TRUE) / 10
+    if(nrow(d) == 1){
+      d.n <- NULL
+    } else {
+      d.n <- tibble(
+        x = seq(
+          min(d$meas, na.rm = TRUE) - sigrange * mean(d$sig, na.rm = TRUE),
+          max(d$meas, na.rm = TRUE) + sigrange * mean(d$sig, na.rm = TRUE),
+          sd(d$meas, na.rm = TRUE) / 10
         ),
-        mean = mean(d$measurement, na.rm = TRUE),
-        sd = sd(d$measurement, na.rm = TRUE)
+        d = dnorm(
+          seq(
+            min(d$meas, na.rm = TRUE) - sigrange * mean(d$sig, na.rm = TRUE),
+            max(d$meas, na.rm = TRUE) + sigrange * mean(d$sig, na.rm = TRUE),
+            sd(d$meas, na.rm = TRUE) / 10
+          ),
+          mean = mean(d$meas, na.rm = TRUE),
+          sd = sd(d$meas, na.rm = TRUE)
+        )
       )
-    )
+    }
     d.s <- d$d.sum %>%
       bind_rows(.id = 'm') %>%
       group_by(x) %>%
@@ -359,24 +365,24 @@ p.data <-
       p <- d %>%
         ggplot() +
         geom_histogram(
-          aes(x = measurement, y = ..density..),
+          aes(x = meas, y = ..density..),
           bins = bins,
           color = 'white',
           alpha = 0.25
         ) +
-        geom_rug(aes(x = measurement)) +
+        geom_rug(aes(x = meas)) +
         coord_cartesian(xlim = xlim, ylim = ylim) +
         xlab('Measured Value') +
         ylab('Density') +
         ggtitle('Histogram with density functions') +
         scale_color_gradient(
-          name = 'Measurement',
+          name = 'meas',
           low = 'black',
           high = 'palegreen2',
           guide = 'legend'
         ) +
         scale_fill_gradient(
-          name = 'Measurement',
+          name = 'meas',
           low = 'black',
           high = 'palegreen2',
           guide = 'legend'
@@ -419,7 +425,7 @@ p.data <-
         )
       }
       if('kernel' %in% curves) {
-        p <- p + geom_density(data = d, aes(x = measurement, y = ..density..), color = 'black', fill = 'thistle4', alpha = 0.1)
+        p <- p + geom_density(data = d, aes(x = meas, y = ..density..), color = 'black', fill = 'thistle4', alpha = 0.1)
       }
     } else if (type == 'point') {
       p <- d %>%
@@ -427,17 +433,17 @@ p.data <-
         geom_point(
           data = data,
           aes(
-            x = 1:length(measurement),
-            y = measurement,
-            size = sde
+            x = 1:length(meas),
+            y = meas
           ),
+          size = 0.75,
           show.legend = FALSE,
           color = 'black'
         ) +
         geom_errorbar(aes(
-          x = 1:length(measurement),
-          ymin = measurement - sde,
-          ymax = measurement + sde
+          x = 1:length(meas),
+          ymin = meas - sig,
+          ymax = meas + sig
         )) +
         ggtitle(bquote(paste(
           'Data with \U00B1 ', .(sigerror), ' sigma uncertainty'
@@ -448,12 +454,13 @@ p.data <-
           name = 'Peak',
           low = 'black',
           high = 'palegreen2',
-          guide = 'legend'
+          guide = 'legend',
+          breaks = 1:length(pks)
         ) +
         guides(fill = guide_legend(override.aes = list(alpha = 1))) +
         coord_cartesian(xlim = xlim,
                         ylim = ylim) +
-        scale_x_continuous(breaks = seq_along(d$measurement)) +
+        scale_x_continuous(breaks = seq_along(d$meas)) +
         theme_grey(base_size = 14) +
         theme(panel.grid.minor.x = element_blank(),
               panel.grid.major.x = element_blank())
@@ -472,7 +479,7 @@ p.data <-
               ymin = ..2 - ..3 * sigrange,
               ymax = ..2 + ..3 * sigrange,
               xmin = 1,
-              xmax = length(d$measurement),
+              xmax = length(d$meas),
               fill = ..1
             ),
             alpha = 0.005
@@ -494,8 +501,8 @@ p.pks <-
       drop_na() %>%
       mutate(
         d.norm = purrr::map2(
-          pks$data$measurement,
-          pks$data$sde,
+          pks$data$meas,
+          pks$data$sig,
           ~ tibble(
             x = seq(
               mean(.x, na.rm = TRUE) - sigrange * .y,
@@ -510,40 +517,40 @@ p.pks <-
               ),
               mean = .x,
               sd = .y
-            ) / length(pks$data$measurement)
+            ) / length(pks$data$meas)
           )
         ),
-        d.sum = purrr::map2(pks$data$measurement, pks$data$sde, ~ tibble(
+        d.sum = purrr::map2(pks$data$meas, pks$data$sig, ~ tibble(
           x = seq(
-            min(pks$data$measurement, na.rm = TRUE) - sigrange * mean(pks$data$sde, na.rm = TRUE),
-            max(pks$data$measurement, na.rm = TRUE) + sigrange * mean(pks$data$sde, na.rm = TRUE),
-            mean(pks$data$sde, na.rm = TRUE) / 15
+            min(pks$data$meas, na.rm = TRUE) - sigrange * mean(pks$data$sig, na.rm = TRUE),
+            max(pks$data$meas, na.rm = TRUE) + sigrange * mean(pks$data$sig, na.rm = TRUE),
+            mean(pks$data$sig, na.rm = TRUE) / 15
           ),
           d = dnorm(
             seq(
-              min(pks$data$measurement, na.rm = TRUE) - sigrange * mean(pks$data$sde, na.rm = TRUE),
-              max(pks$data$measurement, na.rm = TRUE) + sigrange * mean(pks$data$sde, na.rm = TRUE),
-              mean(pks$data$sde, na.rm = TRUE) / 15
+              min(pks$data$meas, na.rm = TRUE) - sigrange * mean(pks$data$sig, na.rm = TRUE),
+              max(pks$data$meas, na.rm = TRUE) + sigrange * mean(pks$data$sig, na.rm = TRUE),
+              mean(pks$data$sig, na.rm = TRUE) / 15
             ),
             mean = .x,
             sd = .y
-          ) / length(pks$data$measurement)
+          ) / length(pks$data$meas)
         ))
       )
     d.n <- tibble(
       x = seq(
-        min(d$measurement, na.rm = TRUE) - sigrange * mean(d$sde, na.rm = TRUE),
-        max(d$measurement, na.rm = TRUE) + sigrange * mean(d$sde, na.rm = TRUE),
-        sd(d$measurement, na.rm = TRUE) / 10
+        min(d$meas, na.rm = TRUE) - sigrange * mean(d$sig, na.rm = TRUE),
+        max(d$meas, na.rm = TRUE) + sigrange * mean(d$sig, na.rm = TRUE),
+        sd(d$meas, na.rm = TRUE) / 10
       ),
       d = dnorm(
         seq(
-          min(d$measurement, na.rm = TRUE) - sigrange * mean(d$sde, na.rm = TRUE),
-          max(d$measurement, na.rm = TRUE) + sigrange * mean(d$sde, na.rm = TRUE),
-          sd(d$measurement, na.rm = TRUE) / 10
+          min(d$meas, na.rm = TRUE) - sigrange * mean(d$sig, na.rm = TRUE),
+          max(d$meas, na.rm = TRUE) + sigrange * mean(d$sig, na.rm = TRUE),
+          sd(d$meas, na.rm = TRUE) / 10
         ),
-        mean = mean(d$measurement, na.rm = TRUE),
-        sd = sd(d$measurement, na.rm = TRUE)
+        mean = mean(d$meas, na.rm = TRUE),
+        sd = sd(d$meas, na.rm = TRUE)
       )
     )
     d.s <- d$d.sum %>%
@@ -557,12 +564,12 @@ p.pks <-
       p <- d %>%
         ggplot() +
         geom_histogram(
-          aes(x = measurement, y = ..density..),
+          aes(x = meas, y = ..density..),
           bins = bins,
           color = 'white',
           alpha = 0.25
         ) +
-        geom_rug(aes(x = measurement)) +
+        geom_rug(aes(x = meas)) +
         geom_area(
           data = d.pks,
           aes(
@@ -584,12 +591,12 @@ p.pks <-
           low = 'black',
           high = 'palegreen2',
           guide = 'legend',
-          breaks = seq_along(d$measurement)
+          breaks = seq_along(d$meas)
         ) +
         guides(fill = guide_legend(override.aes = list(alpha = 1))) +
         theme_grey(base_size = 14)
       if('kernel' %in% curves) {
-        p <- p + geom_density(data = d, aes(x = measurement, y = ..density..), color = 'black', fill = 'thistle4', alpha = 0.1)
+        p <- p + geom_density(data = d, aes(x = meas, y = ..density..), color = 'black', fill = 'thistle4', alpha = 0.1)
       }
       if('sumpdf' %in% curves) {
         p <- p + geom_area(data = d.s, aes(x = x, y = sumd), fill = 'thistle4', color = 'black', alpha = 0.1, position = 'identity')
@@ -620,12 +627,12 @@ p.pks <-
           low = 'black',
           high = 'palegreen2',
           guide = 'legend',
-          breaks = seq_along(d$measurement)
+          breaks = seq_along(d$meas)
         ) +
         guides(fill = guide_legend(override.aes = list(alpha = 1))) +
         theme_grey(base_size = 14)
       if('kernel' %in% curves) {
-        p <- p + geom_density(data = d, aes(x = measurement, y = ..density..), color = 'black', fill = 'thistle4', alpha = 0.1)
+        p <- p + geom_density(data = d, aes(x = meas, y = ..density..), color = 'black', fill = 'thistle4', alpha = 0.1)
       }
       if('sumpdf' %in% curves) {
         p <- p + geom_area(data = d.s, aes(x = x, y = sumd), fill = 'thistle4', color = 'black', alpha = 0.1, position = 'identity')

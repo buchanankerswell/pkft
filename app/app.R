@@ -1,8 +1,7 @@
 source('functions.R')
-# options(shiny.reactlog = FALSE)
+options(shiny.reactlog = FALSE)
 options(shiny.fullstacktrace = TRUE)
 
-# Define UI for application
 # Define UI for application
 ui <- dashboardPage(skin = "black",
   dashboardHeader(title = 'Peakfit Explorer'),
@@ -36,34 +35,21 @@ server <- function(input, output, session) {
   vals$y1 <- NULL
   vals$x2 <- NULL
   vals$y2 <- NULL
-  # Raw data
-  vals$data <- NULL
+  vals$data <- tibble(meas = rep(NA_real_, 15), sig = rep(NA_real_, 15), toggle = rep(FALSE, 15))
   # Generates interactive table populated with data from vals$data
   output$table <- renderRHandsontable({
-    d <- data %>% debounce(1500)
-    rhandsontable(d(), stretchH = 'all') %>%
+    d <- vals$data
+    rhandsontable(d, stretchH = 'all') %>%
       hot_cols(columnSorting = TRUE)
   })
-  
-  data <- reactive({
-    if (!is.null(input$table)) {
-      vals$data <- hot_to_r(input$table)
-    } else {
-      vals$data <- read_delim('data/trayler.txt', delim = ' ') %>%
-        rename(measurement = age,
-               sde = ageSds) %>%
-        select(measurement, sde) %>%
-        mutate(
-          'measurement' = as.numeric(measurement),
-          toggle = rep(TRUE, length(measurement))
-        )
-    }
-    return(vals$data)
-  })
   observe({
+    if (!is.null(input$table)) {vals$data <- hot_to_r(input$table)} 
+  })
+  # This observer finds peaks when the find peaks button is pressed
+  observeEvent(input$calc, {
     req(input$sigma)
     req(input$k)
-      d <- data() %>% drop_na() %>% filter(toggle == TRUE)
+    d <- vals$data %>% drop_na() %>% filter(toggle == TRUE)
       vals$pks <- pkfit(
         d,
         k = input$k,
@@ -74,52 +60,35 @@ server <- function(input, output, session) {
         alpha = input$alpha
       )
   })
+  observeEvent(input$toggle, {
+    req(vals$data)
+    if(input$toggle == FALSE) {
+      vals$data$toggle <- FALSE
+    } else {
+      vals$data$toggle <- TRUE
+    }
+  })
+  # Reactive plot function updates the data plot
   p1 <- reactive({
     req(!is.null(vals$data))
     d <- vals$data %>% drop_na() %>% filter(toggle == TRUE)
     if (nrow(d) != 0) {
-      if (!is.null(vals$pks)) {
-        if (isTruthy(input$stp)) {
-          p <- p.data(
-            d,
-            vals$pks$pks,
-            type = input$type1,
-            bins = input$bins1,
-            xlim = vals$x1,
-            ylim = vals$y1,
-            sigrange = input$sigrange,
-            sigerror = input$sigma,
-            curves = input$curves1
-          )
-        } else {
-          p <- p.data(
-            d,
-            type = input$type1,
-            bins = input$bins1,
-            xlim = vals$x1,
-            ylim = vals$y1,
-            sigrange = input$sigrange,
-            sigerror = input$sigma,
-            curves = input$curves1
-          )
-        }
-      } else {
-        p <- p.data(
-          d,
-          type = input$type1,
-          bins = input$bins1,
-          xlim = vals$x1,
-          ylim = vals$y1,
-          sigrange = input$sigrange,
-          sigerror = input$sigma,
-          curves = input$curves1
-        )
-      }
+      p <- p.data(
+        d,
+        type = input$type1,
+        bins = input$bins1,
+        xlim = vals$x1,
+        ylim = vals$y1,
+        sigrange = input$sigrange,
+        sigerror = input$sigma,
+        curves = input$curves1
+      )
     } else {
       p <- NULL
     }
     return(p)
   })
+  # Reactive plot function updates the peakfit plot
   p2 <- reactive({
     req(!is.na(vals$pks))
     req(input$bins2)
@@ -141,14 +110,18 @@ server <- function(input, output, session) {
     }
     return(p)
   })
+  # Render data plot
   output$p1 <- renderPlot({
     p <- p1 %>% debounce(200)
     p()
   })
+  # Render peakfit plot
   output$p2 <- renderPlot({
     p <- p2 %>% debounce(0)
     p()
   })
+  # Reactive function that updates the verbatim text
+  # output only when the peakfit plot is updated
   vtext <- eventReactive(p2(), {
     req(vals$pks)
     info <- try(paste0(
@@ -166,17 +139,21 @@ server <- function(input, output, session) {
     }
     return(info)
   })
+  # Render verbatim text output
   output$info <- renderText({
     t <- vtext %>% debounce(0)
     t()
   })
+  # Render acknoledgments verbatim text output
   output$acknowledgements <- renderText({
-    paste('This app was built using the IsoplotR package:\nLudwig, K.R., 1998. On the treatment of concordant uranium-lead ages. Geochimica et Cosmochimica Acta, 62(4), pp.665-676.\nInitial dataset from:\nTrayler, R.B., Schmitz, M.D., Cuitiño, J.I., Kohn, M.J., Bargo, M.S., Kay, R.F., Strömberg, C.A. and Vizcaíno, S.F., 2020. An improved approach to age-modeling in deep time: Implications for the Santa Cruz Formation, Argentina. GSA Bulletin, 132(1-2)')
+    paste('This app was built using the IsoplotR package:\nVermeesch, P. (2018). IsoplotR: a free and open toolbox for geochronology. Geoscience Frontiers, 9, 1479-1493. doi: 10.1016/j.gsf.2018.04.001.\nInitial dataset from:\nTrayler, R.B., Schmitz, M.D., Cuitiño, J.I., Kohn, M.J., Bargo, M.S., Kay, R.F., Strömberg, C.A. and Vizcaíno, S.F., 2020. An improved approach to age-modeling in deep time: Implications for the Santa Cruz Formation, Argentina. GSA Bulletin, 132(1-2)')
   })
+  # Reset data plot zoom when plot type changes
   observeEvent(input$type1, {
     vals$x1 <- NULL
     vals$y1 <- NULL
   })
+  # Data plot zoom
   observeEvent(input$p1.dbl, {
     #======== ZOOM =======================
     # Zoom to brush window on double click
@@ -190,6 +167,7 @@ server <- function(input, output, session) {
       vals$y1 <- NULL
     }
   })
+  # Peakfit plot zoom
   observeEvent(input$p2.dbl, {
     #======== ZOOM =======================
     # Zoom to brush window on double click
@@ -203,13 +181,17 @@ server <- function(input, output, session) {
       vals$y2 <- NULL
     }
   })
+  # Output different user options depending on the plot type
   observe({
     type <- input$type1
-    if(type == 'hist') {
+    if (type == 'hist') {
       output$curves1 <- renderUI({
-        checkboxGroupInput('curves1', 'Choose Curves',
-                           choices = c('norm', 'kernel', 'sumpdf', 'stackpdf', 'indv'),
-                           inline = TRUE)
+        checkboxGroupInput(
+          'curves1',
+          'Choose Curves',
+          choices = c('norm', 'kernel', 'sumpdf', 'stackpdf', 'indv'),
+          inline = TRUE
+        )
       })
       output$bins1 <- renderUI({
         sliderInput(
@@ -221,16 +203,12 @@ server <- function(input, output, session) {
           ticks = FALSE
         )
       })
-      output$stp <- NULL
-      } else {
-        output$curves1 <- NULL
-        output$bins1 <- NULL
-        output$stp <- renderUI({
-          checkboxInput('stp', 'Peaks', value = FALSE)
-        })
+    } else {
+      output$curves1 <- NULL
+      output$bins1 <- NULL
     }
   })
-  
+  # Output different user options depending on the plot type
   observeEvent(input$type2, {
     type <- input$type2
     if(type == 'hist') {
@@ -256,7 +234,6 @@ server <- function(input, output, session) {
       output$bins2 <- NULL
     }
   })
-  
   # This observer handles the plot download
   observe({
     # Needs a filename input by the user
@@ -284,7 +261,6 @@ server <- function(input, output, session) {
                         })
   })
 }
-
 # Run the application
 shinyApp(ui = ui, server = server, options = 'quiet')
 

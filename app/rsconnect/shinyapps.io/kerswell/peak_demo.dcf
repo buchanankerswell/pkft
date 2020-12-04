@@ -5,8 +5,8 @@ account: kerswell
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 2913096
-bundleId: 3684922
+bundleId: 3687973
 url: https://kerswell.shinyapps.io/peak_demo/
-when: 1601415290.04386
+when: 1601480005.12421
 asMultiple: FALSE
 asStatic: FALSE
