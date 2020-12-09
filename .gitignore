@@ -39,3 +39,5 @@ vignettes/*.pdf
 .Renviron
 
 Rplots.pdf
+
+.DS_Store
