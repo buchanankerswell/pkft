@@ -48,7 +48,12 @@ Alternatively, you can run a precompiled version of the application on Shinyapps
 
 ## Acknowledgement
 
-I gratefully acknowledge feedback and suggestions provided by [Matthew Kohn](https://scholar.google.com/citations?user=xSyB1KQAAAAJ&hl=en&oi=ao) and [Kayleigh Harvey](https://www.linkedin.com/in/kayleigh-harvey-phd-98471956).
+I gratefully acknowledge feedback and suggestions provided by [Matthew Kohn](https://scholar.google.com/citations?user=xSyB1KQAAAAJ&hl=en&oi=ao) and [Kayleigh Harvey](https://www.linkedin.com/in/kayleigh-harvey-phd-98471956). You can cite the app using the following:
+
+
+```
+Kerswell, B. (2023). Peakfit Explorer. https://doi.org/10.17605/OSF.IO/2BU3C
+```
 
 ## Open Research
 
