@@ -52,7 +52,7 @@ I gratefully acknowledge feedback and suggestions provided by [Matthew Kohn](htt
 
 
 ```
-Kerswell, B. (2023). Peakfit Explorer. https://doi.org/10.17605/OSF.IO/2BU3C
+Kerswell, B. (2023, [month, day]). Peakfit Explorer. https://doi.org/10.17605/OSF.IO/2BU3C
 ```
 
 ## Open Research
