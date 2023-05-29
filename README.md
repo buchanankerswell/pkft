@@ -1,10 +1,10 @@
-![](draft/assets/images/repo-banner.png)
+![](assets/images/repo-banner.png)
 
 ***Figure:*** *Demonstration of peak finding for a sample dataset from Trayler et al. ([2020](https://pubs.geoscienceworld.org/gsa/gsabulletin/article/132/1-2/233/570826/An-improved-approach-to-age-modeling-in-deep-time?casa_token=FGSsojPXafwAAAAA%3aHwyxNEkzCmIkKK-IZ-ZsZxHaN9aKG78eQxBNSiJvCvve9TbXZLkw6quwXF8T2h4Ldxp45jI)). Any 1D array of data with accompanying uncertainties (49 age estimates with standard errors in this case; boxplot) can be represented as a sum of discrete normal distributions (light grey probability distribution function). Clusters of similar data (age estimates in this case) can be found by implementing a Gaussian Mixture Model (a type of unsupervised classification algorithm; grey to green peaks) that fits k = n discrete normal distributions to the data by maximizing the log likelihood of the data (e.g., Banfield & Raftery, [1993](https://www.jstor.org/stable/2532201?casa_token=KkfdXmTuw14AAAAA%3A-YxwRAH3gVUUtXa6ScpyNNGkgzHWZoY926LZHc4_2Qr-S1j3NuGez7hO5ABHNs1dlwek617wtKJurul8bZJnJCFrjsNPMP_oFRRurlZ8-2lMElPoxCWt)).*
 
 # Peakfit Explorer (2021)
 
-This shiny application implements Gaussian Mixture Modeling, a type of unsupervised classification algorithm (e.g., Banfield & Raftery, [1993](https://www.jstor.org/stable/2532201?casa_token=KkfdXmTuw14AAAAA%3A-YxwRAH3gVUUtXa6ScpyNNGkgzHWZoY926LZHc4_2Qr-S1j3NuGez7hO5ABHNs1dlwek617wtKJurul8bZJnJCFrjsNPMP_oFRRurlZ8-2lMElPoxCWt)) to find peak positions of 1D datasets (using the `peakfit` function from the [IsoplotR](https://github.com/pvermees/IsoplotR/) package; Vermeesch, [2018](https://www.sciencedirect.com/science/article/pii/S1674987118300835?via%3Dihub)).
+This shiny application implements Gaussian Mixture Modeling, a type of unsupervised classification algorithm (e.g., Banfield & Raftery, [1993](https://www.jstor.org/stable/2532201?casa_token=KkfdXmTuw14AAAAA%3A-YxwRAH3gVUUtXa6ScpyNNGkgzHWZoY926LZHc4_2Qr-S1j3NuGez7hO5ABHNs1dlwek617wtKJurul8bZJnJCFrjsNPMP_oFRRurlZ8-2lMElPoxCWt)), to find peak positions of 1D datasets using the `peakfit` function from the [IsoplotR](https://github.com/pvermees/IsoplotR/) package (Vermeesch, [2018](https://www.sciencedirect.com/science/article/pii/S1674987118300835?via%3Dihub)).
 
 
 ## Repository
@@ -40,7 +40,11 @@ make
 
 This will check for required R packages and try to install missing packages automatically.
 
-If all packages are found and available it will proceed to run the application locally on your machine. Alternatively, you can run a precompiled version of the application from [here](https://kerswell.shinyapps.io/peak/).
+If all packages are found and available it will proceed to run the application locally on your machine. Just navigate to the url indicated in the terminal after launching the app (`listening on [url] ...`).
+
+## Shinyapps.io
+
+Alternatively, you can run a precompiled version of the application on Shinyapps.io from [here](https://kerswell.shinyapps.io/peak/).
 
 ## Acknowledgement
 
