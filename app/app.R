@@ -1,4 +1,7 @@
+#!/usr/bin/env Rscript
+
 source('functions.R')
+source('dashboard.R')
 options(shiny.reactlog = FALSE)
 options(shiny.fullstacktrace = TRUE)
 
@@ -7,7 +10,7 @@ ui <- dashboardPage(skin = "black",
   dashboardHeader(title = 'Peakfit Explorer'),
   dashboardSidebar(sidebarMenu(
     menuItem(
-      'Explore Data',
+      'Visualize Data',
       tabName = 'explore',
       icon = icon('think-peaks')
     ),
@@ -15,13 +18,7 @@ ui <- dashboardPage(skin = "black",
       'Gaussian Mixture Model',
       tabName = 'pkfit',
       icon = icon('mortar-pestle')
-    ),
-    menuItem('Options',
-             tabName = 'options',
-             icon = icon('sliders-h')),
-    menuItem('Acknowledgements',
-             tabName = 'ack',
-             icon = icon('book-open'))
+    )
   )),
   body
 )
@@ -35,12 +32,28 @@ server <- function(input, output, session) {
   vals$y1 <- NULL
   vals$x2 <- NULL
   vals$y2 <- NULL
-  vals$data <- tibble(meas = rep(NA_real_, 15), sig = rep(NA_real_, 15), toggle = rep(FALSE, 15))
+  data.file <- 'data/demo-data-trayler-et-al-2020.csv'
+  if(file.exists(data.file)) {
+    vals$data <-
+      readr::read_csv(data.file, show_col_types = F) %>%
+      group_by(sample) %>%
+      mutate(suffix = row_number()) %>%
+      ungroup() %>%
+      mutate(suffix = ifelse(!is.na(suffix), str_c('-', suffix), '')) %>%
+      mutate(sample = str_c(sample, suffix)) %>%
+      select(-suffix)
+  } else {
+    vals$data <- tibble(
+      sample = rep(NA_real_, 17),
+      value = rep(NA_real_, 17),
+      stdError = rep(NA_real_, 17),
+      toggle = rep(FALSE, 17)
+    )
+  }
   # Generates interactive table populated with data from vals$data
   output$table <- renderRHandsontable({
     d <- vals$data
-    rhandsontable(d, stretchH = 'all') %>%
-      hot_cols(columnSorting = TRUE)
+    rhandsontable(d, stretchH = 'all') %>% hot_cols(columnSorting = TRUE)
   })
   observe({
     if (!is.null(input$table)) {vals$data <- hot_to_r(input$table)} 
@@ -50,15 +63,15 @@ server <- function(input, output, session) {
     req(input$sigma)
     req(input$k)
     d <- vals$data %>% drop_na() %>% filter(toggle == TRUE)
-      vals$pks <- pkfit(
-        d,
+    vals$pks <-
+      pkfit(
+        data = d,
         k = input$k,
         sigerror = input$sigma,
         sigdig = input$sigdig,
         sigrange = input$sigrange,
-        log = input$log,
         alpha = input$alpha
-      )
+    )
   })
   observeEvent(input$toggle, {
     req(vals$data)
@@ -74,13 +87,14 @@ server <- function(input, output, session) {
     d <- vals$data %>% drop_na() %>% filter(toggle == TRUE)
     if (nrow(d) != 0) {
       p <- p.data(
-        d,
-        type = input$type1,
+        data = d,
         bins = input$bins1,
-        xlim = vals$x1,
-        ylim = vals$y1,
         sigrange = input$sigrange,
         sigerror = input$sigma,
+        xlim = vals$x1,
+        ylim = vals$y1,
+        type = input$type1,
+        arrange = input$arrange1,
         curves = input$curves1
       )
     } else {
@@ -91,18 +105,17 @@ server <- function(input, output, session) {
   # Reactive plot function updates the peakfit plot
   p2 <- reactive({
     req(!is.na(vals$pks))
-    req(input$bins2)
     req(input$sigrange)
-    req(input$type2)
+    req(input$scalepdf)
     p <- try(
       p.pks(
-        vals$pks,
-        bins = input$bins2,
+        pks = vals$pks,
+        bins = input$bins1,
         sigrange = input$sigrange,
         xlim = vals$x2,
         ylim = vals$y2,
-        type = input$type2,
-        curves = input$curves2
+        curves = input$curves2,
+        scalepdf = input$scalepdf
       )
     )
     if (is(p.pks, "try-error")) {
@@ -124,14 +137,7 @@ server <- function(input, output, session) {
   # output only when the peakfit plot is updated
   vtext <- eventReactive(p2(), {
     req(vals$pks)
-    info <- try(paste0(
-      ' Peak   |  Pos. | StdE  |  Proportion',
-      '\n ',
-      paste(vals$pks$pks$legend, collapse = '\n '),
-      '\n ',
-      'Bayesian Information Criterion: ',
-      round(vals$pks$pks$BIC[[1]], 2)
-    ))
+    info <- try(paste0('peak,value,stdError\n',paste0(vals$pks$pks$legend, collapse = '\n')))
     if (is(info, "try-error")) {
       info <- 'Algorithm went singular. Please select another value for k'
     } else {
@@ -144,9 +150,16 @@ server <- function(input, output, session) {
     t <- vtext %>% debounce(0)
     t()
   })
-  # Render acknoledgments verbatim text output
+  # Download text output
+  output$dlcsv <- renderUI({
+    req(vtext)
+    downloadButton('dlcsv', 'Download Peaks (csv)')
+  })
+  # Render acknowledgements verbatim text output
   output$acknowledgements <- renderText({
-    paste('This app was built using the IsoplotR package:\nVermeesch, P. (2018). IsoplotR: a free and open toolbox for geochronology. Geoscience Frontiers, 9, 1479-1493. doi: 10.1016/j.gsf.2018.04.001.\nInitial dataset from:\nTrayler, R.B., Schmitz, M.D., Cuitiño, J.I., Kohn, M.J., Bargo, M.S., Kay, R.F., Strömberg, C.A. and Vizcaíno, S.F., 2020. An improved approach to age-modeling in deep time: Implications for the Santa Cruz Formation, Argentina. GSA Bulletin, 132(1-2)')
+    paste(
+      'This app uses functions from the IsoplotR package:\nVermeesch, P. (2018). https://doi.org/10.1016/j.gsf.2018.04.001.\n\nDemo data from Trayler et al. (2020). https://doi.org/10.1130/B35203.1.\n\nAll data, code, and relevant information for reproducing this work can be found at:\nhttps://github.com/buchanankerswell/pkft, and at https://doi.org/10.17605/OSF.IO/2BU3C, the official Open Science Framework data repository.\nAll code is MIT Licensed and free for use and distribution (see license details).\n\nPlease cite as:\nKerswell, B. (2023). Peakfit Explorer. https://doi.org/10.17605/OSF.IO/2BU3C.'
+    )
   })
   # Reset data plot zoom when plot type changes
   observeEvent(input$type1, {
@@ -184,11 +197,11 @@ server <- function(input, output, session) {
   # Output different user options depending on the plot type
   observe({
     type <- input$type1
-    if (type == 'hist') {
+    if (type == 'histogram') {
       output$curves1 <- renderUI({
         checkboxGroupInput(
           'curves1',
-          'Choose Curves',
+          'Choose Density Curve(s)',
           choices = c('norm', 'kernel', 'sumpdf', 'stackpdf', 'indv'),
           inline = TRUE
         )
@@ -196,43 +209,45 @@ server <- function(input, output, session) {
       output$bins1 <- renderUI({
         sliderInput(
           'bins1',
-          'Bins',
+          'Number of Histogram Bins',
           min = 1,
           max = 50,
-          value = 10,
+          value = 30,
           ticks = FALSE
         )
       })
+      output$arrange1 <- NULL
     } else {
       output$curves1 <- NULL
       output$bins1 <- NULL
-    }
-  })
-  # Output different user options depending on the plot type
-  observeEvent(input$type2, {
-    type <- input$type2
-    if(type == 'hist') {
-      output$bins2 <- renderUI({
-        sliderInput(
-          'bins2',
-          'Bins',
-          min = 1,
-          max = 50,
-          value = 10,
-          ticks = FALSE
+      output$arrange1 <- renderUI({
+        selectInput(
+          'arrange1',
+          label = 'Arrange Data',
+          choices = c('value', 'sample', 'stdError'),
+          selected = 'value'
         )
       })
-      output$curves2 <- renderUI({
-        checkboxGroupInput('curves2', 'Choose Curves',
-                           choices = c('norm', 'sumpdf', 'kernel'), inline = TRUE)
-      })
-    } else {
-      output$curves2 <- renderUI({
-        checkboxGroupInput('curves2', 'Choose Curves',
-                           choices = c('norm', 'sumpdf', 'kernel'), inline = TRUE)
-      })
-      output$bins2 <- NULL
     }
+  })
+  # User options gaussian mixture modeling visualization
+  output$curves2 <- renderUI({
+    checkboxGroupInput(
+      'curves2',
+      'Choose Density Curve(s)',
+      choices = c('norm', 'kernel', 'sumpdf'), inline = TRUE
+    )
+  })
+  # User options gaussian mixture modeling visualization
+  output$scalepdf <- renderUI({
+    sliderInput(
+      'scalepdf',
+      'Scale PDF',
+      min = 1,
+      max = 10,
+      value = 3,
+      ticks = FALSE
+    )
   })
   # This observer handles the plot download
   observe({
@@ -240,27 +255,26 @@ server <- function(input, output, session) {
     req(input$filename)
     # Download button
     output$dlplot <-
-      # Download the current plot as a pdf, with a filename, width, and height defined
-      # by user inputs
-      downloadHandler(filename <- paste0(input$filename, '.pdf'),
-                      content <-
-                        function(filename) {
-                          if(input$p.select == 'Explore Data') {
-                            p <- p1()
-                          } else {
-                            p <- p2()
-                          }
-                          ggsave(
-                            filename,
-                            plot = p,
-                            device = pdf(
-                              width = input$pdf_width,
-                              height = input$pdf_height
-                            )
-                          )
-                        })
+      # Download the current plot
+      downloadHandler(
+        filename <- input$filename,
+        content <- function(filename) {
+          if(input$p.select == 'Explore Data') {
+            p <- p1()
+          } else {
+            p <- p2()
+          }
+          ggsave(
+            filename,
+            plot = p,
+            width = input$plot_width,
+            height = input$plot_height,
+            device = input$plot_device
+          )
+        }
+      )
   })
 }
+
 # Run the application
 shinyApp(ui = ui, server = server)
-
