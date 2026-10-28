@@ -85,6 +85,6 @@ Expectation–maximisation alternates between assigning points to peaks and movi
 
 I gratefully acknowledge feedback and suggestions provided by
 [Matthew Kohn](https://scholar.google.com/citations?user=xSyB1KQAAAAJ&hl=en&oi=ao)
-and [Kayleigh Harvey](https://www.linkedin.com/in/kayleigh-harvey-phd-98471952).
+and Kayleigh Harvey.
 Peak modeling follows [IsoplotR](https://github.com/pvermees/IsoplotR/)
 (Vermeesch, 2018); demo data from Trayler et al. (2020).
