@@ -5,7 +5,7 @@
 📚 See the [documentation](https://pkft.readthedocs.io/en/latest/) for details.
 
 Peak finding for 1D data with uncertainties by discrete Gaussian mixture
-modelling (Galbraith & Laslett, 1993) in the spirit of IsoplotR
+modeling (Galbraith & Laslett, 1993) in the spirit of IsoplotR
 `peakfit` (Vermeesch, 2018), served as a FastAPI service with a minimal
 dependency-free web UI.
 
@@ -89,9 +89,5 @@ See the docs for the full API reference.
 I gratefully acknowledge feedback and suggestions provided by
 [Matthew Kohn](https://scholar.google.com/citations?user=xSyB1KQAAAAJ&hl=en&oi=ao)
 and [Kayleigh Harvey](https://www.linkedin.com/in/kayleigh-harvey-phd-98471952).
-Peak modelling follows [IsoplotR](https://github.com/pvermees/IsoplotR/)
+Peak modeling follows [IsoplotR](https://github.com/pvermees/IsoplotR/)
 (Vermeesch, 2018); demo data from Trayler et al. (2020).
-
-## License
-
-MIT License — see [LICENSE](LICENSE).
