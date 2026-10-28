@@ -1,0 +1,7 @@
+include README.md
+include LICENSE
+include pyproject.toml
+recursive-include pkft *.py
+recursive-include pkft/static *.html *.css *.js *.svg
+recursive-include pkft/data *.csv
+recursive-include tests *.py

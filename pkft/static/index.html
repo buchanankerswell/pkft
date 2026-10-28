@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>pkft — Peakfit Explorer</title>
+<link rel="icon" href="/static/pkft-logo.svg" type="image/svg+xml" />
+<link rel="stylesheet" href="/static/app.css" />
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">pkft <span class="sub">Peakfit Explorer</span></div>
+  <nav class="tabs">
+    <a data-tab="explore" href="/" class="active">Visualize Data</a>
+    <a data-tab="mixture" href="/mixture">Gaussian Mixture Model</a>
+    <span id="tab_indicator"></span>
+  </nav>
+  <div class="actions">
+    <button id="load_demo" title="Load the bundled demo data">Load demo</button>
+    <label class="file">Import CSV <input id="file" type="file" accept=".csv,text/csv" hidden /></label>
+    <button id="dl_svg">Download plot (svg)</button>
+    <button id="dl_csv" disabled>Download peaks (csv)</button>
+    <a href="https://pkft.readthedocs.io/en/latest/" target="_blank" rel="noopener">Docs</a>
+  </div>
+</header>
+
+<main>
+  <section id="view-explore" class="view">
+    <div class="grid">
+      <div class="panel">
+        <h2>Data</h2>
+        <div class="row">
+          <label><input type="checkbox" id="toggle_all" checked /> Toggle all</label>
+          <button id="add_row">Add row</button>
+          <button id="clear">Clear</button>
+        </div>
+        <div class="tablewrap" id="tablewrap"><table id="table">
+          <thead><tr><th></th><th>Sample</th><th>Value</th><th>Standard error</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table></div>
+        <p class="hint">Tick a row to include that observation in the plot and the fit. Each observation needs a value and a standard error in the same units.</p>
+      </div>
+      <div class="panel">
+        <h2>Explore plot</h2>
+        <div class="row">
+          <label>Plot <select id="type"><option value="histogram">histogram</option><option value="point">point</option></select></label>
+          <label>Arrange <select id="arrange"><option value="value">value</option><option value="sample">sample</option><option value="standard_error">standard error</option></select></label>
+          <label>Bins <input id="bins" type="range" min="1" max="50" value="30" /> <span id="bins_v">30</span></label>
+          <label>Sigma range <input id="sigma_range_plot" type="range" min="1" max="5" step="1" value="3" /> <span id="sigma_range_plot_v">3</span></label>
+        </div>
+        <div class="row curves" id="curves1">
+          <label><input type="checkbox" value="norm" checked /> Normal curve</label>
+          <label><input type="checkbox" value="kernel" checked /> Kernel density</label>
+          <label><input type="checkbox" value="sumpdf" checked /> Summed PDF</label>
+          <label><input type="checkbox" value="stackpdf" /> Stacked PDF</label>
+          <label><input type="checkbox" value="indv" /> Individual peaks</label>
+        </div>
+        <svg id="plot1" viewBox="0 0 720 420" role="img" aria-label="data plot"></svg>
+      </div>
+    </div>
+  </section>
+
+  <section id="view-mixture" class="view hidden">
+    <div class="grid">
+      <div class="panel">
+        <h2>Peakfit parameters</h2>
+        <div class="form">
+          <label>Peak count (0 = automatic) <input id="peak_count" type="number" min="0" max="25" step="1" value="0" /></label>
+          <label>Significant digits <input id="significant_digits" type="number" min="1" max="6" step="1" value="2" /></label>
+          <label>Confidence <select id="confidence"><option>90%</option><option selected>95%</option><option>98%</option><option>99%</option></select></label>
+          <label>Sigma range <input id="sigma_range" type="number" min="0.5" max="10" step="0.5" value="3" /></label>
+          <label>Input sigma <select id="input_sigma"><option>1</option><option>2</option><option>3</option></select></label>
+          <label>Peak scale <input id="peak_scale" type="range" min="1" max="10" step="1" value="3" /> <span id="peak_scale_v">3</span></label>
+        </div>
+        <div class="row curves" id="curves2">
+          <label><input type="checkbox" value="norm" checked /> Normal curve</label>
+          <label><input type="checkbox" value="kernel" checked /> Kernel density</label>
+          <label><input type="checkbox" value="sumpdf" checked /> Summed PDF</label>
+        </div>
+        <h3>Peaks</h3>
+        <pre id="info">Fitting …</pre>
+        <div id="bic"></div>
+      </div>
+      <div class="panel">
+        <h2>Mixture plot</h2>
+        <svg id="plot2" viewBox="0 0 720 420" role="img" aria-label="mixture plot"></svg>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script src="/static/app.js"></script>
+</body>
+</html>
