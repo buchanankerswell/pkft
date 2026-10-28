@@ -1,0 +1,8 @@
+{
+  "title": "pkft: Peakfit Explorer",
+  "description": "A FastAPI service for Gaussian mixture peak finding in 1D data with uncertainties.",
+  "creators": [{ "name": "Kerswell, Buchanan" }],
+  "license": "MIT",
+  "keywords": ["peak-finding", "mixture-model", "uncertainty", "fastapi"],
+  "upload_type": "software"
+}

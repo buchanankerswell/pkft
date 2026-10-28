@@ -1,84 +1,104 @@
-![](assets/images/repo-banner.png)
+# pkft: Peakfit Explorer
 
-***Figure:*** *Demonstration of peak finding for a sample dataset from Trayler et al. ([2020](https://pubs.geoscienceworld.org/gsa/gsabulletin/article/132/1-2/233/570826/An-improved-approach-to-age-modeling-in-deep-time?casa_token=FGSsojPXafwAAAAA%3aHwyxNEkzCmIkKK-IZ-ZsZxHaN9aKG78eQxBNSiJvCvve9TbXZLkw6quwXF8T2h4Ldxp45jI)). Any 1D array of data with accompanying uncertainties (49 age estimates with standard errors in this case; boxplot) can be represented as a sum of discrete normal distributions (light grey probability distribution function). Clusters of similar data (age estimates in this case) can be found by implementing a Gaussian Mixture Model (a type of unsupervised classification algorithm; grey to green peaks) that fits k = n discrete normal distributions to the data by maximizing the log likelihood of the data (e.g., Banfield & Raftery, [1993](https://www.jstor.org/stable/2532201?casa_token=KkfdXmTuw14AAAAA%3A-YxwRAH3gVUUtXa6ScpyNNGkgzHWZoY926LZHc4_2Qr-S1j3NuGez7hO5ABHNs1dlwek617wtKJurul8bZJnJCFrjsNPMP_oFRRurlZ8-2lMElPoxCWt)).*
+📚 See the [documentation](https://pkft.readthedocs.io/en/latest/) for details.
 
-# Peakfit Explorer (2021)
+Peak finding for 1D data with uncertainties by discrete Gaussian mixture
+modelling (Galbraith & Laslett, 1993) in the spirit of IsoplotR
+`peakfit` (Vermeesch, 2018), served as a FastAPI service with a minimal
+dependency-free web UI.
 
-This shiny application implements Gaussian Mixture Modeling, a type of unsupervised classification algorithm (e.g., Banfield & Raftery, [1993](https://www.jstor.org/stable/2532201?casa_token=KkfdXmTuw14AAAAA%3A-YxwRAH3gVUUtXa6ScpyNNGkgzHWZoY926LZHc4_2Qr-S1j3NuGez7hO5ABHNs1dlwek617wtKJurul8bZJnJCFrjsNPMP_oFRRurlZ8-2lMElPoxCWt)), to find peak positions of 1D datasets using the `peakfit` function from the [IsoplotR](https://github.com/pvermees/IsoplotR/) package (Vermeesch, [2018](https://www.sciencedirect.com/science/article/pii/S1674987118300835?via%3Dihub)).
+![Peakfit demo](assets/images/repo-banner.png)
 
-
-## Repository
-
-This repository provides all materials for running the application *Peakfit Explorer* (Kerswell, [2023](https://doi.org/10.17605/OSF.IO/2BU3C)).
-
-This repository includes:
-
-- A shiny application
-- A example dataset
-- A Makefile to compile and run the shiny application
-
-This repository is self-contained but requires the following software (all open-source).
+*Figure: mixture fit for the bundled Trayler et al. 2020 demo dataset.*
 
 ## Prerequisite software
 
-### R
+This project is written in [python](https://www.python.org). For most users, I recommend installing the [miniforge](https://github.com/conda-forge/miniforge) python distribution. This distributions includes a minimal installation of python and the package manager [conda](https://docs.conda.io/en/latest/), which is required to build the necessary python environment for this software.
 
-This application is written in R. Follow the instructions at [R's homepage](https://www.r-project.org) to download and install the latest release of R on your machine.
+For macOS users, miniforge can be installed with [homebrew](https://brew.sh):
 
-## Running the application
-
+```bash
+brew install miniforge
 ```
-# Clone this repository
-git clone https://github.com/buchanankerswell/pkft.git
 
-# Change into the directory
+For Window's users, miniforge can be installed from a binary .exe. Follow the instructions for miniconda, anaconda, or miniforge (recommended) [here](https://docs.conda.io/projects/conda/en/stable/user-guide/install/windows.html).
+
+## Installation Guide
+
+To install with Conda (recommended):
+
+``` bash
+# Create conda environment
+conda create -n pkft python=3.13 pip
+
+# Activate conda environment
+conda activate pkft
+
+# Install pkft
+pip install pkft
+```
+
+If you want to install the development version for local testing in "editable" mode:
+
+``` bash
+# Clone repo
+git clone https://github.com/buchanankerswell/pkft.git
 cd pkft
 
-# Use Makefile to compile and run
-make
+# Checkout develop branch
+git checkout develop
+
+# Create conda environment and install pkft locally in editable mode
+# including optional development and documentation dependencies
+make environment
 ```
 
-This will check for required R packages and try to install missing packages automatically.
+## Usage Guide
 
-If all packages are found and available it will proceed to run the application locally on your machine. Just navigate to the url indicated in the terminal after launching the app (`listening on [url] ...`).
+After installing pkft using either method above, launch the server from the command line:
 
-## Shinyapps.io
+``` bash
+# Activate conda environment
+conda activate pkft
 
-Alternatively, you can run a precompiled version of the application on Shinyapps.io from [here](https://kerswell.shinyapps.io/peak/).
+# Launch server (UI at http://127.0.0.1:8000/)
+pkft
+```
+
+The same JSON serves browsers and agents:
+
+``` bash
+curl -X POST http://127.0.0.1:8000/fit \
+  -H 'Content-Type: application/json' \
+  -d '{"observations": [{"value": 17.634, "standard_error": 0.016}], "peak_count": 1}'
+```
+
+Open http://127.0.0.1:8000/ for the data explorer, http://127.0.0.1:8000/mixture for the mixture tab, or click **Load demo** for the bundled Trayler et al. 2020 dataset.
+
+## Method
+
+Each observation `x[i]` with analytical variance `s[i]**2` contributes
+`sum_j pi[j] * N(x[i] | mu[j], s[i]**2)` to the likelihood (Galbraith &
+Laslett, 1993, discrete mixture; IsoplotR `peakfit` with `log=FALSE`).
+Expectation–maximisation (10 restarts) maximises the log-likelihood;
+`peak_count = 0` selects 1..5 components by BIC. Results maximise
+the same likelihood as IsoplotR `peakfit` with `log=FALSE`, with small
+numerical differences from the different optimiser and starting points.
+See the docs for the full API reference.
+
+## Citation
+
+Cite the app as Kerswell, B. (2023). Peakfit Explorer.
+https://doi.org/10.17605/OSF.IO/2BU3C
 
 ## Acknowledgement
 
-I gratefully acknowledge feedback and suggestions provided by [Matthew Kohn](https://scholar.google.com/citations?user=xSyB1KQAAAAJ&hl=en&oi=ao) and [Kayleigh Harvey](https://www.linkedin.com/in/kayleigh-harvey-phd-98471956). You can cite the app using the following:
+I gratefully acknowledge feedback and suggestions provided by
+[Matthew Kohn](https://scholar.google.com/citations?user=xSyB1KQAAAAJ&hl=en&oi=ao)
+and [Kayleigh Harvey](https://www.linkedin.com/in/kayleigh-harvey-phd-98471952).
+Peak modelling follows [IsoplotR](https://github.com/pvermees/IsoplotR/)
+(Vermeesch, 2018); demo data from Trayler et al. (2020).
 
+## License
 
-```
-Kerswell, B. (2023, [month, day]). Peakfit Explorer. https://doi.org/10.17605/OSF.IO/2BU3C
-```
-
-## Open Research
-
-All data, code, and relevant information for this work can be found at [https://github.com/buchanankerswell/pkft](https://github.com/buchanankerswell/pkft), and at [https://doi.org/10.17605/OSF.IO/2BU3C](https://doi.org/10.17605/OSF.IO/2BU3C), the official Open Science Framework data repository ([Kerswell, 2023](https://doi.org/10.17605/OSF.IO/2BU3C)). All code is MIT Licensed and free for use and distribution (see license details).
-
-# License
-
-MIT License
-
-Copyright (c) 2021 Buchanan Kerswell
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+MIT License — see [LICENSE](LICENSE).

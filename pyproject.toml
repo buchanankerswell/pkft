@@ -1,0 +1,48 @@
+[build-system]
+requires = ["setuptools", "wheel", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pkft"
+dynamic = ["version"]
+description = "A FastAPI service for Gaussian mixture peak finding in 1D geochronological data"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+classifiers = [
+    "Natural Language :: English",
+    "Development Status :: 2 - Pre-Alpha",
+    "Intended Audience :: Science/Research",
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Topic :: Scientific/Engineering :: Visualization"
+]
+authors = [{ name = "Buchanan Kerswell", email = "buck.kerswell@gmail.com" }]
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn>=0.30",
+    "pydantic>=2.0",
+    "numpy",
+]
+
+[project.optional-dependencies]
+dev = ["pytest", "pytest-cov", "httpx", "ruff"]
+
+[project.urls]
+Repository = "https://github.com/buchanankerswell/pkft"
+
+[project.scripts]
+pkft = "pkft.api:main"
+
+[tool.setuptools]
+license-files = ["LICENSE"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["pkft*"]
+
+[tool.setuptools.package-data]
+pkft = ["*.csv", "static/*", "data/*.csv"]
+
+[tool.setuptools_scm]
