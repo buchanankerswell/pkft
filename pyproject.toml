@@ -7,7 +7,7 @@ name = "pkft"
 dynamic = ["version"]
 description = "A FastAPI service for Gaussian mixture peak finding in 1D geochronological data"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.13"
 license = {text = "MIT"}
 classifiers = [
     "Natural Language :: English",
