@@ -28,7 +28,20 @@ Citation
 .. image:: https://zenodo.org/badge/DOI/10.5281/zenodo.23735940.svg
    :target: https://doi.org/10.5281/zenodo.23735940
 
-Cite this release as Kerswell, B. (2026). pkft: Peakfit Explorer. Zenodo. https://doi.org/10.5281/zenodo.23735940
+Cite this release:
+
+.. code-block:: bibtex
+
+    @software{kerswell_2026_23735941,
+      author       = {Kerswell, Buchanan},
+      title        = {pkft: Peakfit Explorer},
+      month        = oct,
+      year         = 2026,
+      publisher    = {Zenodo},
+      version      = {latest},
+      doi          = {10.5281/zenodo.23735940},
+      url          = {https://doi.org/10.5281/zenodo.23735940},
+    }
 
 .. toctree::
    :maxdepth: 2

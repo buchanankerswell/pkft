@@ -71,10 +71,18 @@ See the docs for the full API reference.
 
 ## Citation
 
-Cite the app as Kerswell, B. (2023). Peakfit Explorer.
-https://doi.org/10.17605/OSF.IO/2BU3C
-
-Cite this release as Kerswell, B. (2026). pkft: Peakfit Explorer. Zenodo. https://doi.org/10.5281/zenodo.23735940
+```bibtex
+@software{kerswell_2026_23735941,
+  author       = {Kerswell, Buchanan},
+  title        = {pkft: Peakfit Explorer},
+  month        = oct,
+  year         = 2026,
+  publisher    = {Zenodo},
+  version      = {latest},
+  doi          = {10.5281/zenodo.23735940},
+  url          = {https://doi.org/10.5281/zenodo.23735940},
+}
+```
 
 ## Acknowledgement
 
