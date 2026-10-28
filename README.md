@@ -72,7 +72,7 @@ See the docs for the full API reference.
 ## Citation
 
 ```bibtex
-@software{kerswell_2026_23735941,
+@software{pkft,
   author       = {Kerswell, Buchanan},
   title        = {pkft: Peakfit Explorer},
   month        = oct,
