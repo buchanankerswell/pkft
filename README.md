@@ -1,5 +1,6 @@
 # pkft: Peakfit Explorer
 
+[![PyPI](https://img.shields.io/pypi/v/pkft)](https://pypi.org/project/pkft/)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23735940.svg)](https://doi.org/10.5281/zenodo.23735940)
 
 📚 See the [documentation](https://pkft.readthedocs.io/en/latest/) for details.
