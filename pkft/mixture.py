@@ -9,7 +9,7 @@ the model cannot collapse to zero variance and needs only numpy.
 ``peak_count=0`` means automatic selection over 1..min(5, n) by BIC with
 :math:`p = 2k - 1` free parameters (:math:`k` means + :math:`k-1` proportions), matching the
 IsoplotR ``k='auto'`` convention (maximum 5). Results are not bit-identical
-to IsoplotR (different optimiser/initialisation) but maximise the same
+to IsoplotR (different optimizer/initialization) but maximize the same
 likelihood.
 """
 
