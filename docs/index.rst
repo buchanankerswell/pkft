@@ -20,7 +20,15 @@ Fit the data from your browser or a script:
     curl -X POST http://127.0.0.1:8000/fit -H 'Content-Type: application/json' \
         -d '{"observations": [{"sample": "CV-13", "value": 17.634, "standard_error": 0.016}], "peak_count": 1}'
 
-That example fits a single peak to a single measurement. See :doc:`installation` for environment setup and :doc:`usage` for the full walkthrough.
+That example fits a single peak to a single measurement. Open http://127.0.0.1:8000/ for the data explorer, http://127.0.0.1:8000/mixture for the mixture tab, or click Load demo for the bundled Trayler et al. 2020 dataset. See :doc:`installation` for environment setup and :doc:`usage` for the full walkthrough.
+
+Citation
+--------
+
+.. image:: https://zenodo.org/badge/DOI/10.5281/zenodo.23735940.svg
+   :target: https://doi.org/10.5281/zenodo.23735940
+
+Cite this release as Kerswell, B. (2026). pkft: Peakfit Explorer. Zenodo. https://doi.org/10.5281/zenodo.23735940
 
 .. toctree::
    :maxdepth: 2
