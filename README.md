@@ -60,14 +60,11 @@ Open http://127.0.0.1:8000/ for the data explorer, http://127.0.0.1:8000/mixture
 
 ## Method
 
-Each observation `x[i]` with analytical variance `s[i]**2` contributes
-`sum_j pi[j] * N(x[i] | mu[j], s[i]**2)` to the likelihood (Galbraith &
-Laslett, 1993, discrete mixture; IsoplotR `peakfit` with `log=FALSE`).
-Expectation–maximisation (10 restarts) maximises the log-likelihood;
-`peak_count = 0` selects 1..5 components by BIC. Results maximise
-the same likelihood as IsoplotR `peakfit` with `log=FALSE`, with small
-numerical differences from the different optimiser and starting points.
-See the docs for the full API reference.
+The likelihood is the Galbraith & Laslett (1993) discrete mixture. Each observation $x_i$ with analytical variance $s_i^2$ contributes a mixture density over $k$ discrete ages $\mu_j$ with proportions $\pi_j$:
+
+$$\ell = \sum_i \log \sum_{j=1}^{k} \pi_j \, N(x_i \mid \mu_j, s_i^2)$$
+
+Expectation–maximisation alternates between assigning points to peaks and moving the peaks, restarting 10 times from spread-out and random starting points and keeping the best likelihood. BIC with $p = 2k - 1$ parameters selects $k$. The fit maximises the same likelihood as IsoplotR `peakfit` with `log=FALSE`. Numbers can differ in the last digits because the optimiser and starting points differ. Component curves use the peak standard error for width and are weighted by each peak's share of the data. See the docs for the full API reference.
 
 ## Citation
 
