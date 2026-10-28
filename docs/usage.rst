@@ -58,7 +58,7 @@ The likelihood is the Galbraith & Laslett (1993) discrete mixture. Each observat
 
    \ell = \sum_i \log \sum_{j=1}^{k} \pi_j \, N(x_i \mid \mu_j, s_i^2)
 
-Expectation-maximisation alternates between assigning points to peaks and moving the peaks, restarting 10 times from spread-out and random starting points and keeping the best likelihood. BIC with :math:`p = 2k - 1` parameters selects :math:`k`. The fit maximises the same likelihood as IsoplotR ``peakfit`` with ``log=FALSE``. Numbers can differ in the last digits because the optimiser and starting points differ. Component curves use the peak standard error for width and are weighted by each peak's share of the data.
+Expectation-maximization alternates between assigning points to peaks and moving the peaks, restarting 10 times from spread-out and random starting points and keeping the best likelihood. BIC with :math:`p = 2k - 1` parameters selects :math:`k`. The fit maximizes the same likelihood as IsoplotR ``peakfit`` with ``log=FALSE``. Numbers can differ in the last digits because the optimizer and starting points differ. Component curves use the peak standard error for width and are weighted by each peak's share of the data.
 
 Troubleshooting
 ---------------
