@@ -1,15 +1,13 @@
 # pkft: Peakfit Explorer
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23735940.svg)](https://doi.org/10.5281/zenodo.23735940)
+
 📚 See the [documentation](https://pkft.readthedocs.io/en/latest/) for details.
 
 Peak finding for 1D data with uncertainties by discrete Gaussian mixture
 modelling (Galbraith & Laslett, 1993) in the spirit of IsoplotR
 `peakfit` (Vermeesch, 2018), served as a FastAPI service with a minimal
 dependency-free web UI.
-
-![Peakfit demo](assets/images/repo-banner.png)
-
-*Figure: mixture fit for the bundled Trayler et al. 2020 demo dataset.*
 
 ## Prerequisite software
 
@@ -38,24 +36,9 @@ conda activate pkft
 pip install pkft
 ```
 
-If you want to install the development version for local testing in "editable" mode:
-
-``` bash
-# Clone repo
-git clone https://github.com/buchanankerswell/pkft.git
-cd pkft
-
-# Checkout develop branch
-git checkout develop
-
-# Create conda environment and install pkft locally in editable mode
-# including optional development and documentation dependencies
-make environment
-```
-
 ## Usage Guide
 
-After installing pkft using either method above, launch the server from the command line:
+After installing pkft, launch the server from the command line:
 
 ``` bash
 # Activate conda environment
@@ -88,8 +71,18 @@ See the docs for the full API reference.
 
 ## Citation
 
-Cite the app as Kerswell, B. (2023). Peakfit Explorer.
-https://doi.org/10.17605/OSF.IO/2BU3C
+```bibtex
+@software{pkft,
+  author       = {Kerswell, Buchanan},
+  title        = {pkft: Peakfit Explorer},
+  month        = oct,
+  year         = 2026,
+  publisher    = {Zenodo},
+  version      = {latest},
+  doi          = {10.5281/zenodo.23735940},
+  url          = {https://doi.org/10.5281/zenodo.23735940},
+}
+```
 
 ## Acknowledgement
 
