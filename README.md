@@ -5,10 +5,7 @@
 
 📚 See the [documentation](https://pkft.readthedocs.io/en/latest/) for details.
 
-Peak finding for 1D data with uncertainties by discrete Gaussian mixture
-modeling (Galbraith & Laslett, 1993) in the spirit of IsoplotR
-`peakfit` (Vermeesch, 2018), served as a FastAPI service with a minimal
-dependency-free web UI.
+Peak finding for 1D data with uncertainties by discrete Gaussian mixture modeling, served as a FastAPI service with a minimal dependency-free web UI.
 
 ## Prerequisite software
 
@@ -59,14 +56,6 @@ curl -X POST http://127.0.0.1:8000/fit \
 
 Open http://127.0.0.1:8000/ for the data explorer, http://127.0.0.1:8000/mixture for the mixture tab, or click **Load demo** for the bundled Trayler et al. 2020 dataset.
 
-## Method
-
-The likelihood is the Galbraith & Laslett (1993) discrete mixture. Each observation $x_i$ with analytical variance $s_i^2$ contributes a mixture density over $k$ discrete ages $\mu_j$ with proportions $\pi_j$:
-
-$$\ell = \sum_i \log \sum_{j=1}^{k} \pi_j \, N(x_i \mid \mu_j, s_i^2)$$
-
-Expectation–maximisation alternates between assigning points to peaks and moving the peaks, restarting 10 times from spread-out and random starting points and keeping the best likelihood. BIC with $p = 2k - 1$ parameters selects $k$. The fit maximises the same likelihood as IsoplotR `peakfit` with `log=FALSE`. Numbers can differ in the last digits because the optimiser and starting points differ. Component curves use the peak standard error for width and are weighted by each peak's share of the data. See the docs for the full API reference.
-
 ## Citation
 
 ```bibtex
@@ -84,8 +73,5 @@ Expectation–maximisation alternates between assigning points to peaks and movi
 
 ## Acknowledgement
 
-I gratefully acknowledge feedback and suggestions provided by
-[Matthew Kohn](https://scholar.google.com/citations?user=xSyB1KQAAAAJ&hl=en&oi=ao)
-and Kayleigh Harvey.
-Peak modeling follows [IsoplotR](https://github.com/pvermees/IsoplotR/)
-(Vermeesch, 2018); demo data from Trayler et al. (2020).
+I gratefully acknowledge feedback and suggestions provided by [Matthew Kohn](https://scholar.google.com/citations?user=xSyB1KQAAAAJ&hl=en&oi=ao) and Kayleigh Harvey.
+Peak modeling follows [IsoplotR](https://github.com/pvermees/IsoplotR/) (Vermeesch, 2018); demo data from Trayler et al. (2020).
