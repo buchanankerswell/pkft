@@ -10,7 +10,11 @@ from pkft import curves as curve_lib
 from pkft import mixture as mix
 from pkft.models import BicEntry, FitRequest, FitResponse, Peak, PeakCurve
 
-app = FastAPI(title="pkft", version="1.0.0")
+app = FastAPI(
+    title="pkft",
+    version="1.0.0",
+    description="Agent-facing JSON API. Humans: use the web UI served at /.",
+)
 app.mount("/static", StaticFiles(directory=Path(__file__).parent / "static"), name="static")
 
 
