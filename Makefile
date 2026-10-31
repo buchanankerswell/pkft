@@ -1,97 +1,83 @@
-# Top-level dirs
-PROJECT_ROOT := $(CURDIR)
+CONDA_ENV_ID := pkft
+CONDA_ENV_YML := environment.yml
+APP_MODULE := pkft.api:app
+HOST := 127.0.0.1
+SERVE_PORT := 8000
+
+include project.mk
+
+.DEFAULT_GOAL := help
+
 APP := $(PROJECT_ROOT)/pkft
 TESTS := $(PROJECT_ROOT)/tests
 DOCS := $(PROJECT_ROOT)/docs
-
-# Conda config
-CONDA_ENV_ID := pkft
-CONDA_ENV_YML := environment.yml
 CONDA_PYTHON = $$(conda run -n $(CONDA_ENV_ID) which python)
+CLEAN := $(PROJECT_ROOT)/.pytest_cache $(PROJECT_ROOT)/build $(PROJECT_ROOT)/dist $(PROJECT_ROOT)/*.egg-info $(PROJECT_ROOT)/.coverage $(PROJECT_ROOT)/coverage.xml
+DEEP_CLEAN := $(PROJECT_ROOT)/.log $(DOCS)/_build
 
-# Server
-APP_MODULE := pkft.api:app
+.PHONY: all build run docs test format environment clean deep-clean help
 
-# Targets
-.PHONY: run docs test format environment clean deep-clean
+build: environment test docs
+	@echo "    --------------------------------------------------"
+	@echo "    pkft built successfully!"
+	@echo "    --------------------------------------------------"
 
-all: environment test run
+all: build run
 
 run:
-	@$(CONDA_PYTHON) -m uvicorn $(APP_MODULE) --host 127.0.0.1 --port 8000 --reload
+	@$(CONDA_PYTHON) -m uvicorn $(APP_MODULE) --host $(HOST) --port $(SERVE_PORT) --reload
 
-# Cleanup directory
-CLEAN := $(APP)/**/__pycache__ $(APP)/**/*.pyc $(TESTS)/**/__pycache__ $(CURDIR)/.pytest_cache $(CURDIR)/build $(CURDIR)/dist $(CURDIR)/*.egg-info $(CURDIR)/.coverage $(CURDIR)/coverage.xml
-DEEP_CLEAN :=
-
-docs:
-	@$(MAKE) -C docs html
+docs: $(LOG_FILE)
+	@echo " -> $(DOCS)/_build/html"
+	@$(MAKE) --no-print-directory -C $(DOCS) html || exit 1
 
 test:
+	@echo " -> running pytest"
 	@$(CONDA_PYTHON) -m pytest --cov=pkft --cov-branch --cov-report=xml
 
 format:
 	@$(CONDA_PYTHON) -m ruff format .
 	@npx --yes prettier --write "pkft/static/*.js" "pkft/static/*.css"
 
-environment: $(CONDA_ENV_YML)
+environment: $(CONDA_ENV_YML) $(LOG_FILE)
 	@if conda info --envs | awk '{print $$1}' | grep -qx "$(CONDA_ENV_ID)"; then \
-		echo "Environment '$$name' already exists. Skipping..."; \
+		echo " -- Environment '$(CONDA_ENV_ID)' already exists. Skipping..."; \
 	else \
-		echo "Creating environment: $(CONDA_ENV_ID) from $(CONDA_ENV_YML)"; \
-		conda env create -n "$(CONDA_ENV_ID)" -f "$(CONDA_ENV_YML)"; \
+		echo " -> Creating environment: $(CONDA_ENV_ID) from $(CONDA_ENV_YML)"; \
+		conda env create -n "$(CONDA_ENV_ID)" -f "$(CONDA_ENV_YML)" $(LOGGER) || exit 1; \
 	fi
 
 clean:
-	@echo "==> Cleaning ..."
-	@for item in $(CLEAN); do \
-		safe_rm() { \
-			if [ -e "$$1" ]; then \
-				ABS_PATH=$$(realpath "$$1"); \
-				case "$$ABS_PATH" in \
-					$(PROJECT_ROOT)*) \
-						echo "-> Safely removing\n   $$ABS_PATH"; \
-						rm -rf "$$ABS_PATH";; \
-					*) \
-						echo "!! Skipping (outside project root)\n   $$ABS_PATH";; \
-				esac; \
-			else \
-				echo "-- Skipping (not found)\n   $$1"; \
-			fi; \
-		}; \
-		safe_rm "$$item"; \
-	done
-	@$(MAKE) -C docs clean || true
+	@echo "    --------------------------------------------------"
+	@echo "    Cleaning ..."
+	@echo "    --------------------------------------------------"
+	@$(call SAFE_RM_LIST,$(CLEAN))
+	@find $(APP) $(TESTS) -name "__pycache__" -exec echo " xx {}" \; -exec rm -rf {} +
+	@find $(APP) $(TESTS) -name "*.pyc" -exec echo " xx {}" \; -delete
+	@$(MAKE) --no-print-directory -C $(DOCS) clean || true
 	@find . -name ".DS_Store" -type f -delete
 
-deep-clean:
-	@echo "==> Deep cleaning ..."
-	@for item in $(DEEP_CLEAN); do \
-		safe_rm() { \
-			if [ -e "$$1" ]; then \
-				ABS_PATH=$$(realpath "$$1"); \
-				case "$$ABS_PATH" in \
-					$(PROJECT_ROOT)*) \
-						echo "-> Safely removing\n   $$ABS_PATH"; \
-						rm -rf "$$ABS_PATH";; \
-					*) \
-						echo "!! Skipping (outside project root)\n   $$ABS_PATH";; \
-				esac; \
-			else \
-				echo "-- Skipping (not found)\n   $$1"; \
-			fi; \
-		}; \
-		safe_rm "$$item"; \
-	done
+deep-clean: clean
+	@echo "    --------------------------------------------------"
+	@echo "    Deep cleaning ..."
+	@echo "    --------------------------------------------------"
+	@$(call SAFE_RM_LIST,$(DEEP_CLEAN))
 
+$(LOG_FILE):
+	@mkdir -p $(dir $(LOG_FILE))
+	@touch $(LOG_FILE)
 
 help:
-	@echo "Available targets:"
-	@echo "  run          Run pkft app locally"
-	@echo "  docs         Build documentation"
-	@echo "  test         Run unit tests"
-	@echo "  format       Format code to 150 columns (ruff + prettier)"
-	@echo "  environment  Create Conda environment"
-	@echo "  clean        Cleanup unnecessary files and directories (safe)"
-	@echo "  deep-clean   Deep clean figures and results (use with caution!)"
-	@echo "  help         Show this help message"
+	@echo "    --------------------------------------------------"
+	@echo "    Available targets:"
+	@echo "    --------------------------------------------------"
+	@echo "    build        Build pkft from scratch (environment + test + docs)"
+	@echo "    all          Build then run the app locally"
+	@echo "    run          Run pkft app locally"
+	@echo "    docs         Build documentation"
+	@echo "    test         Run unit tests"
+	@echo "    format       Format code to 150 columns (ruff + prettier)"
+	@echo "    environment  Create Conda environment"
+	@echo "    clean        Cleanup unnecessary files and directories (safe)"
+	@echo "    deep-clean   Deep clean generated files and logs (use with caution!)"
+	@echo "    help         Show this help message"
