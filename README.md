@@ -73,5 +73,4 @@ Open http://127.0.0.1:8000/ for the data explorer, http://127.0.0.1:8000/mixture
 
 ## Acknowledgement
 
-I gratefully acknowledge feedback and suggestions provided by [Matthew Kohn](https://scholar.google.com/citations?user=xSyB1KQAAAAJ&hl=en&oi=ao) and Kayleigh Harvey.
-Peak modeling follows [IsoplotR](https://github.com/pvermees/IsoplotR/) (Vermeesch, 2018); demo data from Trayler et al. (2020).
+I gratefully acknowledge feedback and suggestions provided by [Matthew Kohn](https://scholar.google.com/citations?user=xSyB1KQAAAAJ&hl=en&oi=ao) and Kayleigh Harvey. Peak modeling follows [IsoplotR](https://github.com/pvermees/IsoplotR/) (Vermeesch, 2018); demo data from Trayler et al. (2020).
