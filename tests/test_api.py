@@ -87,4 +87,9 @@ def test_ui_serves_without_plotly():
         html = res.text
         assert "plot1" in html and "plot2" in html
         assert "Plotly" not in html and "plotly" not in html
-        assert "Peakfit parameters" in html and "Mixture plot" in html
+        assert "Mixture plot" in html and "Peaks" in html
+        assert 'id="settings"' in html and 'id="help"' in html
+    css = client.get("/static/app.css").text
+    assert "--link: #3b5cf6" in css and "--hairline" in css
+    js = client.get("/static/app.js").text
+    assert "toggleSettings" in js and "toggleHelp" in js and "initTheme" in js

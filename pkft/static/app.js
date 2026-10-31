@@ -468,6 +468,98 @@ $("dl_svg").onclick = () => {
   else dlSVG("plot1", "pkft-explore.svg");
 };
 
+/* ---------- dialogs (settings + help) ---------- */
+const settings = $("settings");
+const help = $("help");
+let settingsOpen = false;
+let helpOpen = false;
+
+function toggleSettings() {
+  settingsOpen ? closeSettings() : openSettings();
+}
+function openSettings() {
+  if (helpOpen) closeHelp();
+  settings.hidden = false;
+  settingsOpen = true;
+  settings.querySelector(".help-card").focus();
+}
+function closeSettings() {
+  if (!settingsOpen) return;
+  settings.hidden = true;
+  settingsOpen = false;
+}
+function toggleHelp() {
+  helpOpen ? closeHelp() : openHelp();
+}
+function openHelp() {
+  if (settingsOpen) closeSettings();
+  help.hidden = false;
+  helpOpen = true;
+  help.querySelector(".help-card").focus();
+}
+function closeHelp() {
+  if (!helpOpen) return;
+  help.hidden = true;
+  helpOpen = false;
+}
+$("settings_btn").onclick = toggleSettings;
+$("help_btn").onclick = toggleHelp;
+// Clicking the dimmed backdrop dismisses either dialog.
+for (const el of [settings, help]) {
+  el.addEventListener("pointerdown", (e) => {
+    if (e.target === el) {
+      closeSettings();
+      closeHelp();
+    }
+  });
+}
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && (settingsOpen || helpOpen)) {
+    closeSettings();
+    closeHelp();
+    return;
+  }
+  const tag = e.target.tagName;
+  if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || e.target.isContentEditable) return;
+  if (e.key === "s") {
+    e.preventDefault();
+    toggleSettings();
+  }
+  if (e.key === "?") {
+    e.preventDefault();
+    toggleHelp();
+  }
+});
+
+function initTheme() {
+  const toggle = document.createElement("button");
+  toggle.className = "pill theme-toggle";
+  toggle.setAttribute("aria-label", "Toggle light and dark mode");
+  const meta = document.getElementById("themeColor");
+  const paint = () => {
+    const dark = document.documentElement.classList.contains("dark-mode");
+    toggle.textContent = dark ? "☀ Light" : "☾ Dark";
+    if (meta) meta.content = getComputedStyle(document.documentElement).getPropertyValue("--bg").trim();
+  };
+  const apply = (dark) => {
+    document.documentElement.classList.toggle("dark-mode", dark);
+    paint();
+  };
+  toggle.addEventListener("click", () => {
+    const dark = !document.documentElement.classList.contains("dark-mode");
+    localStorage.setItem("theme", dark ? "dark" : "light");
+    apply(dark);
+  });
+  // Default to the OS setting; an explicit toggle choice wins afterwards.
+  const stored = localStorage.getItem("theme");
+  apply(stored ? stored === "dark" : matchMedia("(prefers-color-scheme: dark)").matches);
+  matchMedia("(prefers-color-scheme: dark)").addEventListener("change", (e) => {
+    if (!localStorage.getItem("theme")) apply(e.matches);
+  });
+  document.querySelector(".actions").appendChild(toggle);
+}
+initTheme();
+
 /* ---------- tabs ---------- */
 function showTab(name) {
   document.querySelectorAll(".tabs a").forEach((a) => a.classList.toggle("active", a.dataset.tab === name));
