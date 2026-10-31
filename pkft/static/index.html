@@ -6,6 +6,8 @@
 <meta name="theme-color" content="#ffffff" id="themeColor" />
 <title>pkft — Peakfit Explorer</title>
 <link rel="icon" href="/static/pkft-logo.svg" type="image/svg+xml" />
+<link rel="stylesheet" href="/static/tokens.css" />
+<link rel="stylesheet" href="/static/dialogs.css" />
 <link rel="stylesheet" href="/static/app.css" />
 </head>
 <body>
@@ -17,13 +19,13 @@
     <span id="tab_indicator"></span>
   </nav>
   <div class="actions">
-    <button id="load_demo" title="Load the bundled demo data">Load demo</button>
-    <label class="file">Import CSV <input id="file" type="file" accept=".csv,text/csv" hidden /></label>
-    <button id="dl_svg">Download plot (svg)</button>
-    <button id="dl_csv" disabled>Download peaks (csv)</button>
-    <button id="settings_btn" title="Fit and display settings (s)">Settings</button>
+    <button id="load_demo" class="pill" title="Load the bundled demo data">Load demo</button>
+    <label class="pill file">Import CSV <input id="file" type="file" accept=".csv,text/csv" hidden /></label>
+    <button id="dl_svg" class="pill">Download plot (svg)</button>
+    <button id="dl_csv" class="pill" disabled>Download peaks (csv)</button>
+    <button id="settings_btn" class="pill" title="Fit and display settings (s)">Settings</button>
     <button id="help_btn" class="pill" title="Keyboard shortcuts and help (?)" aria-label="Keyboard shortcuts and help">?</button>
-    <a href="https://pkft.readthedocs.io/en/latest/" target="_blank" rel="noopener">Docs</a>
+    <a href="https://pkft.readthedocs.io/en/latest/" target="_blank" rel="noopener" class="pill">Docs</a>
   </div>
 </header>
 
@@ -127,6 +129,7 @@
   </div>
 </div>
 
+<script src="/static/dialogs.js"></script>
 <script src="/static/app.js"></script>
 </body>
 </html>
