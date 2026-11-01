@@ -89,7 +89,9 @@ def test_ui_serves_without_plotly():
         assert "Plotly" not in html and "plotly" not in html
         assert "Mixture plot" in html and "Peaks" in html
         assert 'id="settings"' in html and 'id="help"' in html
-    css = client.get("/static/app.css").text
-    assert "--link: #3b5cf6" in css and "--hairline" in css
+    tokens = client.get("/static/tokens.css").text
+    assert "--link: #3b5cf6" in tokens and "--hairline" in tokens
+    dialogs_css = client.get("/static/dialogs.css").text
+    assert ".help-card" in dialogs_css
     js = client.get("/static/app.js").text
-    assert "toggleSettings" in js and "toggleHelp" in js and "initTheme" in js
+    assert "wireDialog" in js and "initTheme" in js and "toggleSettings" not in js

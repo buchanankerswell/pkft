@@ -17,3 +17,7 @@ jobs:
       codecov-token: ${{ secrets.CODECOV_TOKEN }}
       test-pypi-api-token: ${{ secrets.TEST_PYPI_API_TOKEN }}
       pypi-api-token: ${{ secrets.PYPI_API_TOKEN }}
+  design-drift:
+    uses: buchanankerswell/actions/.github/workflows/design-drift.yml@v1
+    with:
+      static-dir: pkft/static
