@@ -1,8 +1,9 @@
 import re
+from importlib.metadata import version as get_version
+
+import revitron_sphinx_theme
 import sphinx_rtd_theme
 from sphinx.locale import _
-import revitron_sphinx_theme
-from importlib.metadata import version as get_version
 
 project = "pkft"
 slug = re.sub(r"\W+", "-", project.lower())
