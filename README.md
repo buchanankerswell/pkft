@@ -17,7 +17,7 @@ For macOS users, miniforge can be installed with [homebrew](https://brew.sh):
 brew install miniforge
 ```
 
-For Window's users, miniforge can be installed from a binary .exe. Follow the instructions for miniconda, anaconda, or miniforge (recommended) [here](https://docs.conda.io/projects/conda/en/stable/user-guide/install/windows.html).
+For Window's users, miniforge can be installed from a binary .exe. Follow the [Windows install instructions](https://docs.conda.io/projects/conda/en/stable/user-guide/install/windows.html) for miniconda, anaconda, or miniforge (recommended).
 
 ## Installation Guide
 
@@ -54,7 +54,7 @@ curl -X POST http://127.0.0.1:8000/fit \
   -d '{"observations": [{"value": 17.634, "standard_error": 0.016}], "peak_count": 1}'
 ```
 
-Open http://127.0.0.1:8000/ for the data explorer, http://127.0.0.1:8000/mixture for the mixture tab, or click **Load demo** for the bundled Trayler et al. 2020 dataset.
+Open `http://127.0.0.1:8000/` for the data explorer, `http://127.0.0.1:8000/mixture` for the mixture tab, or click **Load demo** for the bundled Trayler et al. 2020 dataset.
 
 ## Citation
 

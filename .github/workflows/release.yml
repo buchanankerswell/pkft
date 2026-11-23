@@ -1,13 +1,16 @@
 ---
 name: Test and Release
-permissions:
-  contents: write
-  packages: write
 on:
   push:
     branches: [main]
     tags: ["v*"]
   pull_request:
+permissions:
+  contents: write
+  packages: write
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   test-and-release:
     uses: buchanankerswell/actions/.github/workflows/python-test-release.yml@v1
@@ -17,7 +20,3 @@ jobs:
       codecov-token: ${{ secrets.CODECOV_TOKEN }}
       test-pypi-api-token: ${{ secrets.TEST_PYPI_API_TOKEN }}
       pypi-api-token: ${{ secrets.PYPI_API_TOKEN }}
-  design-drift:
-    uses: buchanankerswell/actions/.github/workflows/design-drift.yml@v1
-    with:
-      static-dir: pkft/static

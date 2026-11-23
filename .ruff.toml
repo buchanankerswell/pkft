@@ -3,3 +3,7 @@ target-version = "py313"
 
 [format]
 quote-style = "double"
+
+[lint.per-file-ignores]
+# Theme packages are imported for Sphinx registration side effects.
+"docs/conf.py" = ["F401"]

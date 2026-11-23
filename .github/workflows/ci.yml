@@ -1,0 +1,30 @@
+---
+name: ci
+
+# Fast checks only: tests/docs/releases live in docs.yml / release.yml.
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+    tags: ["v*"]
+permissions:
+  contents: read
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  lint-python:
+    uses: buchanankerswell/actions/.github/workflows/lint-python.yml@v1
+  lint-web:
+    uses: buchanankerswell/actions/.github/workflows/lint-web.yml@v1
+    with:
+      paths: "pkft/static/*.js pkft/static/*.css"
+  markdownlint:
+    uses: buchanankerswell/actions/.github/workflows/markdownlint.yml@v1
+  typos:
+    uses: buchanankerswell/actions/.github/workflows/typos.yml@v1
+  design-drift:
+    uses: buchanankerswell/actions/.github/workflows/design-drift.yml@v1
+    with:
+      static-dir: pkft/static
